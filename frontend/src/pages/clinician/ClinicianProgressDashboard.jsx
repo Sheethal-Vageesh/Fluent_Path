@@ -17,7 +17,7 @@ export function ClinicianProgressDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [severityFilter, setSeverityFilter] = useState('all')
+  // const [severityFilter, setSeverityFilter] = useState('all')
   const [ageFilter, setAgeFilter] = useState('all')
   const [progressFilter, setProgressFilter] = useState('all')
   const [baselineFilter, setBaselineFilter] = useState('all')
@@ -49,19 +49,19 @@ export function ClinicianProgressDashboard() {
     return children.filter((c) => {
 
       // severity
-      if (severityFilter !== 'all') {
-        if (severityFilter === 'low' && c.averageSeverity >= 3)
-          return false
+      // if (severityFilter !== 'all') {
+      //   if (severityFilter === 'low' && c.averageSeverity >= 3)
+      //     return false
 
-        if (
-          severityFilter === 'moderate' &&
-          (c.averageSeverity < 3 || c.averageSeverity > 6)
-        )
-          return false
+      //   if (
+      //     severityFilter === 'moderate' &&
+      //     (c.averageSeverity < 3 || c.averageSeverity > 6)
+      //   )
+      //     return false
 
-        if (severityFilter === 'high' && c.averageSeverity <= 6)
-          return false
-      }
+      //   if (severityFilter === 'high' && c.averageSeverity <= 6)
+      //     return false
+      // }
 
       // baseline severity filter
       if (baselineFilter !== 'all') {
@@ -102,7 +102,7 @@ export function ClinicianProgressDashboard() {
     })
   }, [
     children,
-    severityFilter,
+    // severityFilter,
     baselineFilter,
     ageFilter,
     progressFilter,
@@ -141,7 +141,7 @@ export function ClinicianProgressDashboard() {
         </h1>
 
         <p className="mt-1 text-sm text-slate-600">
-          Track all child therapy progress under your supervision.
+          Track and evaluate therapy progress across all children.
         </p>
       </div>
 
@@ -149,9 +149,9 @@ export function ClinicianProgressDashboard() {
       <Card className="mt-5 p-4">
         <div className="grid gap-4 md:grid-cols-4">
 
-          <div>
+          {/* <div>
             <label className="text-sm font-medium text-slate-700">
-              Average Severity
+              Stutterig Severity Rating
             </label>
 
             <select
@@ -166,7 +166,7 @@ export function ClinicianProgressDashboard() {
               <option value="moderate">Moderate</option>
               <option value="high">High</option>
             </select>
-          </div>
+          </div> */}
 
           <div>
             <label className="text-sm font-medium text-slate-700">
@@ -263,14 +263,14 @@ export function ClinicianProgressDashboard() {
                 <th className="p-3 text-left">Email</th>
                 <th className="p-3 text-left">Phone</th>
                 <th className="p-3 text-left">
-                  Sessions
+                    Days
                 </th>
                 <th className="p-3 text-left">
                   Baseline Severity
                 </th>
-                <th className="p-3 text-left">
+                {/* <th className="p-3 text-left">
                   Avg Severity
-                </th>
+                </th> */}
               </tr>
             </thead>
 
@@ -342,7 +342,7 @@ export function ClinicianProgressDashboard() {
                       </span>
                     </td>
 
-                  <td className="p-3">
+                  {/* <td className="p-3">
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         c.averageSeverity < 3
@@ -354,7 +354,7 @@ export function ClinicianProgressDashboard() {
                     >
                       {c.averageSeverity.toFixed(1)}
                     </span>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
@@ -454,7 +454,7 @@ export function ClinicianProgressDashboard() {
               domain={[0, 9]}
               ticks={[0,1,2,3,4,5,6,7,8,9]}
               label={{
-                value: 'Average Severity',
+                value: 'Stuttering Severity Rating',
                 angle: -90,
                 position: 'insideLeft',
                 dx: -10

@@ -148,86 +148,34 @@ clinicianRouter.get(
               parentId: p._id,
             })
 
-          const submissions =
-            await PracticeSubmission.find({
-              parentId: p._id,
-            })
-            // console.log(
-            //     'SUBMISSIONS:',
-            //     JSON.stringify(submissions, null, 2)
-            //   )
+          const sessionSubmissions = sessions
 
-         
-              let avgSeverity = 0
+          let avgSeverity = 0
+          let severityTrend = []
 
-            if (submissions.length > 0) {
+          if (sessionSubmissions.length > 0) {
+            const validSessions = sessionSubmissions.filter(
+              (s) => s.StutteringSeverityRating != null
+            )
 
-              const sessionMap = {}
-
-              submissions.forEach((s) => {
-
-                const session = s.sessionNumber || 0
-
-                if (!sessionMap[session]) {
-                  sessionMap[session] = []
-                }
-
-                sessionMap[session].push(
-                  Number(s.StutteringSeverityRating) || 0
-                )
-              })
-
-              const sessionAverages = Object.values(sessionMap).map(
-                (scores) => {
-
-                  const total = scores.reduce(
-                    (sum, val) => sum + val,
-                    0
-                  )
-
-                  return total / scores.length
-                }
-              )
-
+            if (validSessions.length > 0) {
               avgSeverity =
-                sessionAverages.reduce(
-                  (sum, val) => sum + val,
+                validSessions.reduce(
+                  (sum, s) => sum + Number(s.StutteringSeverityRating || 0),
                   0
-                ) / sessionAverages.length
+                ) / validSessions.length
+
+              severityTrend = validSessions.map((s) => ({
+                day: s.sessionNumber,
+                severity: Number(
+                  Number(s.StutteringSeverityRating || 0).toFixed(1)
+                ),
+              }))
             }
-
-            const severityBySession = {}
-
-            submissions.forEach((s) => {
-
-              const day = s.sessionNumber || 1
-
-              if (!severityBySession[day]) {
-                severityBySession[day] = []
-              }
-
-              severityBySession[day].push(
-                Number(s.StutteringSeverityRating) || 0
-              )
-            })
-
-            const severityTrend = Object.keys(severityBySession).map((day) => {
-
-              const scores = severityBySession[day]
-
-              const avg =
-                scores.reduce((a, b) => a + b, 0)
-                / scores.length
-
-              return {
-                day: Number(day),
-                severity: Number(avg.toFixed(1))
-              }
-            })
+          }
 
           return {
             id: p._id,
-
             childId: p.childId,
             childName: p.childName,
             childAge: p.childAge,
@@ -362,6 +310,9 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
       .sort({ submittedAt: -1 })
       .populate('strategyId');
 
+    const sessionRatings = await SessionSubmission.find({ clinicianId, parentId: child._id })
+      .sort({ sessionNumber: 1 });
+
     res.json({
       submissions: submissions.map((s) => ({
         id: s._id,
@@ -372,6 +323,14 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
         practiceVideoUrl: s.practiceVideoUrl || '',
         submittedAt: s.submittedAt,
         strategy: s.strategyId ? { id: s.strategyId._id, title: s.strategyId.title } : null,
+      })),
+      sessionRatings: sessionRatings.map((s) => ({
+        id: s._id,
+        sessionNumber: s.sessionNumber,
+        stuttering: s.StutteringSeverityRating,
+        naturalness: s.SpeechNaturalnessRating,
+        submittedAt: s.submittedAt,
+        autoSubmitted: s.autoSubmitted || false,
       })),
     });
   } catch (e) {

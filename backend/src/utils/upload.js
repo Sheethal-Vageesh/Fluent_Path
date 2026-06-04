@@ -11,8 +11,11 @@ function ensureUploadsDir() {
 function safeExt(originalName) {
   const ext = path.extname(originalName || '').toLowerCase();
   // Only allow common video extensions; fallback to .bin
-  if (['.mp4', '.mov', '.webm', '.m4v'].includes(ext)) return ext;
-  return '.bin';
+    const allowed = ['.mp4', '.mov', '.webm', '.m4v', '.avi', '.mkv', '.flv', '.3gp', '.mp3', '.ogg', '.wav', '.aac', '.m4a', '.flac', '.wma', '.m4b'];
+    if (allowed.includes(ext)) return ext;
+    // If no recognized extension, preserve the original if it looks safe, else use .bin
+    if (ext && /^\.[\w-]{1,5}$/.test(ext)) return ext;
+    return '.bin';
 }
 
 function createUploader({ subdir }) {
@@ -32,9 +35,9 @@ function createUploader({ subdir }) {
   return multer({
     storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-    fileFilter: (_req, file, cb) => {
-      if (file.mimetype && file.mimetype.startsWith('video/')) return cb(null, true);
-      return cb(new Error('Only video files are allowed'));
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype && (file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/'))) return cb(null, true);
+        return cb(new Error('Only video and audio files are allowed'));
     },
   });
 }
@@ -42,7 +45,8 @@ function createUploader({ subdir }) {
 function toPublicUploadUrl(req, absFilePath) {
   // absFilePath should be inside <root>/uploads
   const rel = path.relative(UPLOADS_DIR, absFilePath).split(path.sep).join('/');
-  return `${req.protocol}://${req.get('host')}/uploads/${rel}`;
+    // Use relative URL for better deployment compatibility - will work same origin
+    return `/uploads/${rel}`;
 }
 
 module.exports = { UPLOADS_DIR, createUploader, toPublicUploadUrl };

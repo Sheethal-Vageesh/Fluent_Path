@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { AppShell } from '../../components/AppShell'
 import { Button, Card, Container, Input } from '../../components/ui'
 import { api } from '../../lib/api'
+import { resolveMediaUrl } from '../../lib/media'
 
 function toSeconds({ h, m, s }) {
   const hh = Math.max(0, Number(h) || 0)
@@ -21,9 +22,6 @@ export function ParentStrategyPage() {
   const [msg, setMsg] = useState(null)
 
   const [assignment, setAssignment] = useState(null)
-
-  const [severityRating, setSeverityRating] = useState(0)
-  const [naturalnessRating, setNaturalnessRating] = useState(5)
   const [dur, setDur] = useState({ h: '0', m: '0', s: '0' })
 
   const durationSeconds = useMemo(() => toSeconds(dur), [dur])
@@ -63,8 +61,6 @@ export function ParentStrategyPage() {
     try {
       const form = new FormData()
 
-      form.append('StutteringSeverityRating', String(severityRating))
-      form.append('SpeechNaturalnessRating', String(naturalnessRating))
       form.append('durationSeconds', String(durationSeconds))
       form.append('sessionNumber', String(sessionNumber))
 
@@ -114,25 +110,25 @@ export function ParentStrategyPage() {
               </h2>
 
               <p className="mt-2 text-sm text-slate-600">
-                Watch the demo, practice, then submit your progress.
+                Watch the demo (if available), practice, then submit your progress.
                 <br />
-                ಡೆಮೊ ವೀಡಿಯೊ ನೋಡಿ, ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
+                (ಲಭ್ಯವಿದ್ದರೆ) ಡೆಮೊ ವೀಡಿಯೊ ನೋಡಿ , ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
               </p>
             </div>
 
             <Button
               variant="secondary"
-              onClick={() => nav('/parent/dashboard/assigned')}
+              onClick={() => nav(`/parent/dashboard/session/${sessionNumber}`)}
             >
               Back / ಹಿಂದಕ್ಕೆ
             </Button>
           </div>
 
-          {/* {error ? (
+          {error ? (
             <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">
               {error}
             </div>
-          ) : null} */}
+          ) : null}
 
           {msg ? (
             <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
@@ -152,7 +148,7 @@ export function ParentStrategyPage() {
                 </div>
 
                 <div className="mt-1 text-xs font-medium text-indigo-600">
-                  Session / ಸೆಷನ್ {sessionNumber}
+                  Practice Day {sessionNumber} / ಅಭ್ಯಾಸ ದಿನ {sessionNumber}
                 </div>
 
                 {assignment.strategy.demoVideoUrl ? (
@@ -160,13 +156,12 @@ export function ParentStrategyPage() {
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Demo Video / ಡೆಮೊ ವೀಡಿಯೊ
                     </div>
-
-                    <video
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-black"
-                      controls
-                    >
-                      <source src={assignment.strategy.demoVideoUrl && assignment.strategy.demoVideoUrl.startsWith('http') ? assignment.strategy.demoVideoUrl : `${import.meta.env.VITE_API_URL || ''}${assignment.strategy.demoVideoUrl}`} />
-                    </video>
+                      <video
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-black"
+                        controls
+                      >
+                        <source src={resolveMediaUrl(assignment.strategy.demoVideoUrl)} />
+                      </video>
                   </div>
                 ) : (
                   <div className="mt-3 text-sm text-slate-600">
@@ -178,75 +173,6 @@ export function ParentStrategyPage() {
               
                 <div className="mt-6 grid gap-6 bg-gray-200 rounded-xl p-8">
 
-                  {/* Severity */}
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      Stuttering Severity Rating (0–9)
-                      <br />
-                      ತೊದಲುವಿಕೆ ತೀವ್ರತಾ ಮೌಲ್ಯಮಾಪನ (0–9)
-                    </div>
-
-                    <div className="mt-1 text-xs text-slate-500">
-                      0 = No stuttering / ತೊದಲುವಿಕೆ ಇಲ್ಲ
-                      <br />
-                      1 = Extremely mild stuttering / ಅತ್ಯಂತ ಕಡಿಮೆ ತೊದಲುವಿಕೆ
-                      <br />
-                      9 = Extremely severe stuttering / ಅತ್ಯಂತ ತೀವ್ರ ತೊದಲುವಿಕೆ
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {[...Array(10)].map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setSeverityRating(i)}
-                          className={`h-10 w-10 rounded-xl border text-sm font-semibold transition ${
-                            severityRating === i
-                              ? 'border-red-600 bg-red-600 text-white'
-                              : 'border-slate-200 bg-white text-slate-800'
-                          }`}
-                        >
-                          {i}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Naturalness */}
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      Speech Naturalness Rating (1–9)
-                      <br />
-                      ಮಾತಿನ ಸಹಜತೆ ಮೌಲ್ಯಮಾಪನ (1–9)
-                    </div>
-
-                    <div className="mt-1 text-xs text-slate-500">
-                      1 = Highly natural sounding speech / ಅತ್ಯಂತ ಸಹಜ ಮಾತು
-                      <br />
-                      9 = Highly unnatural sounding speech / ಅತ್ಯಂತ ಅಸಹಜ ಮಾತು
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {[...Array(9)].map((_, i) => {
-                        const value = i + 1
-
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setNaturalnessRating(value)}
-                            className={`h-10 w-10 rounded-xl border text-sm font-semibold transition ${
-                              naturalnessRating === value
-                                ? 'border-indigo-600 bg-indigo-600 text-white'
-                                : 'border-slate-200 bg-white text-slate-800'
-                            }`}
-                          >
-                            {value}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
 
                   {/* Duration */}
                   <div>

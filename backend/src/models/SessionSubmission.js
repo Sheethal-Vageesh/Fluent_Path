@@ -20,9 +20,33 @@ const sessionSubmissionSchema = new mongoose.Schema({
     max: 10,
   },
 
-  submittedAt: {
+  StutteringSeverityRating: {
+    type: Number,
+    required: false,
+    min: 0,
+    max: 9,
+  },
+
+  SpeechNaturalnessRating: {
+    type: Number,
+    required: false,
+    min: 1,
+    max: 9,
+  },
+
+  startedAt: {
     type: Date,
     default: Date.now,
+  },
+
+  submittedAt: {
+    type: Date,
+    default: null,
+  },
+
+  autoSubmitted: {
+    type: Boolean,
+    default: false,
   },
 })
 

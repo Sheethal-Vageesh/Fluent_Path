@@ -3,19 +3,42 @@ import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/ui'
 import { api } from '../../lib/api'
 
-function SessionCard({ session, completed, locked, onClick }) {
+function SessionCard({ session, completed, active, expiresAt, locked, lockedUntil, onClick }) {
   let color = 'bg-slate-100 border-slate-300 text-slate-700'
   let label = 'Available / ಲಭ್ಯವಿದೆ'
 
   if (completed) {
     color = 'bg-green-500 border-green-600 text-white'
     label = 'Completed / ಪೂರ್ಣಗೊಂಡಿದೆ'
+  } else if (active) {
+    color = 'bg-amber-100 border-amber-300 text-amber-900'
+    label = `Open until ${new Date(expiresAt).toLocaleString()}`
   }
 
   if (locked) {
     color = 'bg-slate-200 border-slate-300 text-slate-400'
-    label = 'Locked / ಲಾಕ್ ಮಾಡಲಾಗಿದೆ'
+    if (lockedUntil) {
+      const unlocksAt = new Date(lockedUntil).toLocaleString()
+      label = `Unlocks at ${unlocksAt} 
+      ${unlocksAt} ರಂದು ತೆರೆಯಲಾಗುತ್ತದೆ`
+    } else {
+      label = `Locked: Previous session not submitted 
+      ಲಾಕ್ ಮಾಡಲಾಗಿದೆ: ಹಿಂದಿನ ದಿನದ ಅಭ್ಯಾಸವನ್ನು ಇನ್ನೂ ಸಲ್ಲಿಸಲಾಗಿಲ್ಲ`
+    }
   }
+
+  const kannadaDays = {
+    1: "ಮೊದಲನೇ ದಿನ",
+    2: "ಎರಡನೇ ದಿನ",
+    3: "ಮೂರನೇ ದಿನ",
+    4: "ನಾಲ್ಕನೇ ದಿನ",
+    5: "ಐದನೇ ದಿನ",
+    6: "ಆರನೇ ದಿನ",
+    7: "ಏಳನೇ ದಿನ",
+    8: "ಎಂಟನೇ ದಿನ",
+    9: "ಒಂಬತ್ತನೇ ದಿನ",
+    10: "ಹತ್ತನೇ ದಿನ",
+  };
 
   return (
     <button
@@ -24,10 +47,11 @@ function SessionCard({ session, completed, locked, onClick }) {
       className={`rounded-2xl border-2 p-4 text-left shadow-sm transition hover:shadow-md disabled:cursor-not-allowed ${color}`}
     >
       <div className="text-lg font-bold">
-        Session {session} / ಸೆಷನ್ {session}
+        Day {session} / {session}ನೇ ದಿನ
+        {/* {kannadaDays[session]} */}
       </div>
 
-      <div className="mt-1 text-xs opacity-90">
+      <div className="mt-1 text-xs opacity-90 whitespace-pre-line">
         {label}
       </div>
     </button>
@@ -69,21 +93,21 @@ export function PracticeSessionsPage() {
 
       <div>
         <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
-          Practice Sessions / ಅಭ್ಯಾಸ ಸೆಷನ್‌ಗಳು
+          Daily Practice / ದೈನಂದಿನ ಅಭ್ಯಾಸ
         </h2>
 
         <p className="mt-1 text-sm text-slate-600">
-          Select a session to practice strategies and submit progress.
+          Start today's clinician-assigned strategies, practice them, and submit your progress within 24 hours.
           <br />
-          ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಲು ಸೆಷನ್ ಆಯ್ಕೆಮಾಡಿ.
+          ತಜ್ಞರು ನೀಡಿದ ಇಂದಿನ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು 24 ಗಂಟೆಗಳೊಳಗೆ ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
         </p>
       </div>
 
-      {/* {error && (
+      {error && (
         <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">
           {error}
         </div>
-      )} */}
+      )}
 
       <Card className="mt-5">
         {loading ? (
@@ -97,8 +121,11 @@ export function PracticeSessionsPage() {
               <SessionCard
                 key={session.sessionNumber}
                 session={session.sessionNumber}
-                completed={session.submitted}
+                completed={session.completed}
+                active={session.active}
+                expiresAt={session.expiresAt}
                 locked={session.locked}
+                lockedUntil={session.lockedUntil}
                 onClick={() => {
                   if (!session.locked) {
                     nav(

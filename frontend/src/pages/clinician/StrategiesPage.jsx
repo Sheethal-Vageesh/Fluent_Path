@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Card, Input } from '../../components/ui'
 import { api } from '../../lib/api'
+import { resolveMediaUrl } from '../../lib/media'
 
 export function StrategiesPage() {
   const [strategies, setStrategies] = useState([])
@@ -76,7 +77,7 @@ export function StrategiesPage() {
         </Button>
       </div>
 
-      {/* {error ? <div className="mt-4 text-sm font-medium text-red-700">{error}</div> : null} */}
+      {error ? <div className="mt-4 text-sm font-medium text-red-700">{error}</div> : null}
 
       <Card className="mt-5">
         <form onSubmit={addStrategy} className="grid gap-3">
@@ -129,7 +130,7 @@ export function StrategiesPage() {
                     <div className="mt-3">
                       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Demo video</div>
                       <video className="mt-2 w-full max-w-md rounded-xl border border-slate-200 bg-black" controls>
-                        <source src={s.demoVideoUrl && s.demoVideoUrl.startsWith('http') ? s.demoVideoUrl : `${import.meta.env.VITE_API_URL || ''}${s.demoVideoUrl}`} />
+                        <source src={resolveMediaUrl(s.demoVideoUrl)} />
                       </video>
                     </div>
                   ) : (

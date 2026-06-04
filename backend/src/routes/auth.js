@@ -27,7 +27,7 @@ const clinicianLoginSchema = z.object({
 const parentRequestSchema = z.object({
   clinicianId: z.string().min(1),
   childName: z.string().min(1),
-  childAge: z.coerce.number().min(1).max(18).refine(
+  childAge: z.coerce.number().min(1).max(6).refine(
     (val) => /^\d+(\.\d)?$/.test(val.toString()),
     {
       message: 'Age must have at most one digit after the decimal',

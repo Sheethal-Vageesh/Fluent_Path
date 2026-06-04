@@ -19,24 +19,21 @@ export function Home() {
 
               {/* English + Kannada Heading */}
               <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl leading-tight">
-                Track parent–child interaction strategies
+                Fluency Journey: Parent-Child Interaction Tracker
               </h1>
 
               <div className="mt-3 text-lg font-medium text-indigo-700 leading-relaxed">
-                ಪೋಷಕರು ಮತ್ತು ಮಕ್ಕಳ ಸಂವಹನ ತಂತ್ರಗಳನ್ನು ಸುಲಭವಾಗಿ ಗಮನಿಸಿ
-              </div>
+                ನಿರರ್ಗಳ ಮಾತಿನ ಪಯಣ: ಪೋಷಕ–ಮಕ್ಕಳ ಸಂವಹನ ಪ್ರಗತಿ ಅನುಸರಣೆ 
+             </div>
 
               {/* English Description */}
               <p className="mt-5 text-base leading-relaxed text-slate-600">
-                A secure workflow for clinicians and parents to coordinate Parent-child interaction strategies for preschool children who stutter — with demos, practice tracking,
-                and progress review.
+                A secure platform for clinicians and parents to collaborate on Parent–Child Interaction strategies for preschool children who stutter, with home practice tracking and progress monitoring.
               </p>
 
               {/* Kannada Description */}
               <p className="mt-3 text-base leading-relaxed text-slate-700">
-                ಮಕ್ಕಳ ತೊದಲುವಿಕೆ (Stuttering) ಸಮಸ್ಯೆಗೆ ಮನೆಯಲ್ಲೇ ಅಭ್ಯಾಸ ಮಾಡಲು,
-                ಪೋಷಕರು ಮತ್ತು ತಜ್ಞರು ಒಟ್ಟಾಗಿ ಕಾರ್ಯನಿರ್ವಹಿಸಲು ಸಹಾಯ ಮಾಡುವ ಸುರಕ್ಷಿತ ವೇದಿಕೆ.
-                ಇದರಲ್ಲಿ ಅಭ್ಯಾಸ ವಿಡಿಯೋಗಳು, ಪ್ರಗತಿ ಪರಿಶೀಲನೆ ಮತ್ತು ಚಿಕಿತ್ಸಾ ಟ್ರ್ಯಾಕಿಂಗ್ ಸೌಲಭ್ಯಗಳಿವೆ.
+                ತೊದಲುವಿಕೆ ಇರುವ ಪ್ರೀಸ್ಕೂಲ್ ಮಕ್ಕಳಿಗಾಗಿ ಪೋಷಕ–ಮಕ್ಕಳ ಪರಸ್ಪರ ಸಂವಹನ ತಂತ್ರಗಳಲ್ಲಿ ತಜ್ಞರು ಮತ್ತು ಪೋಷಕರು ಸಹಯೋಗದಿಂದ ಕಾರ್ಯನಿರ್ವಹಿಸಲು, ಮನೆಯಲ್ಲಿನ ಅಭ್ಯಾಸವನ್ನು ದಾಖಲಿಸಲು ಹಾಗೂ ಮಗುವಿನ ಪ್ರಗತಿಯನ್ನು ಗಮನಿಸಲು ಸಹಾಯ ಮಾಡುವ ಸುರಕ್ಷಿತ ವೇದಿಕೆ.
               </p>
 
               {/* Buttons */}
@@ -78,7 +75,7 @@ export function Home() {
 
                   <li>
                     <div className="font-medium">
-                      Clinicians accept requests and assign a Child ID.
+                      Clinician accepts request and assigns a Child ID.
                     </div>
                     <div className="text-slate-500">
                       ತಜ್ಞರು ವಿನಂತಿಯನ್ನು ಸ್ವೀಕರಿಸಿ ಮಗುವಿನ ಐಡಿ ನೀಡುತ್ತಾರೆ.
@@ -87,19 +84,19 @@ export function Home() {
 
                   <li>
                     <div className="font-medium">
-                      Clinicians assign strategies with optional demo videos.
+                      Clinician assigns parent-child interaction strategies.
                     </div>
                     <div className="text-slate-500">
-                      ತಜ್ಞರು ಚಿಕಿತ್ಸಾ ತಂತ್ರಗಳು ಮತ್ತು ಡೆಮೊ ವಿಡಿಯೋಗಳನ್ನು ನೀಡುತ್ತಾರೆ.
+                      ತಜ್ಞರು, ಪೋಷಕರು ಮತ್ತು ಮಕ್ಕಳ ಸಂವಹನ ತಂತ್ರಗಳನ್ನು ನೀಡುತ್ತಾರೆ.
                     </div>
                   </li>
 
                   <li>
                     <div className="font-medium">
-                      Parents practise the strategies, indicate strategies implemented & duration of home training, submit the severity ratings, and upload the home training video (optional)
+                      Parents practise the strategies, indicate strategies implemented & duration of home training, submit the stuttering severity ratings, and upload the home training video (optional)
                     </div>
                     <div className="text-slate-500">
-                      ಪೋಷಕರು ಈ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಬೇಕು, ಅಳವಡಿಸಿಕೊಂಡ ತಂತ್ರಗಳು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ಅವಧಿಯನ್ನು ನಮೂದಿಸಬೇಕು, ತೀವ್ರತೆಯ ರೇಟಿಂಗ್‌ಗಳನ್ನು (Severity ratings) ಸಲ್ಲಿಸಬೇಕು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ವೀಡಿಯೊವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಬೇಕು (ಇದು ಐಚ್ಛಿಕ) 
+                      ಪೋಷಕರು ಈ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಬೇಕು, ಅಳವಡಿಸಿಕೊಂಡ ತಂತ್ರಗಳು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ಅವಧಿಯನ್ನು ನಮೂದಿಸಬೇಕು, ತೊದಲುವಿಕೆ ತೀವ್ರತೆಯ ರೇಟಿಂಗ್‌ಗಳನ್ನು (stutteringSeverity ratings) ಸಲ್ಲಿಸಬೇಕು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ವೀಡಿಯೊವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಬೇಕು (ಇದು ಐಚ್ಛಿಕ) 
                     </div>
                   </li>
 

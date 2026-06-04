@@ -61,7 +61,7 @@ export function ClinicianAuth() {
               </h2>
 
               <div className="mt-1 text-sm font-medium text-indigo-700">
-                ವೈದ್ಯರ ಪ್ರವೇಶ
+                ತಜ್ಞರ ಪ್ರವೇಶ
               </div>
 
               <p className="mt-2 text-sm text-slate-600">
@@ -222,7 +222,7 @@ export function ClinicianAuth() {
                       After registering, you will be taken to your Clinician dashboard.
                       <br />
                       <span className="text-slate-400">
-                        ನೋಂದಣಿ ನಂತರ ವೈದ್ಯರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಕರೆದೊಯ್ಯಲಾಗುತ್ತದೆ.
+                        ನೋಂದಣಿ ನಂತರ ತಜ್ಞರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಕರೆದೊಯ್ಯಲಾಗುತ್ತದೆ.
                       </span>
                     </>
                   ) : (
@@ -230,7 +230,7 @@ export function ClinicianAuth() {
                       After login, you will be taken to your Clinician dashboard.
                       <br />
                       <span className="text-slate-400">
-                        ಲಾಗಿನ್ ನಂತರ ವೈದ್ಯರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಕರೆದೊಯ್ಯಲಾಗುತ್ತದೆ.
+                        ಲಾಗಿನ್ ನಂತರ ತಜ್ಞರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಕರೆದೊಯ್ಯಲಾಗುತ್ತದೆ.
                       </span>
                     </>
                   )}

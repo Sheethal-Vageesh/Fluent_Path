@@ -7,7 +7,7 @@ import {
   BarChart, Bar, AreaChart, Area, ReferenceArea,Cell, ReferenceLine,
   Label
 } from 'recharts'
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion' // eslint-disable-line no-unused-vars
 
 function formatDate(d) {
   const dt = new Date(d)
@@ -30,6 +30,7 @@ export function ClinicianChildPage() {
   const [assigned, setAssigned] = useState([])
   const [checked, setChecked] = useState({})
   const [submissions, setSubmissions] = useState([])
+  const [sessionRatings, setSessionRatings] = useState([])
   const [selectedSession, setSelectedSession] = useState(null)
 
   const [tab, setTab] = useState('assign') // assign | progress | messages
@@ -55,6 +56,7 @@ export function ClinicianChildPage() {
       setStrategies(s.data.strategies || [])
       setAssigned(a.data.assignments || [])
       setSubmissions(p.data.submissions || [])
+      setSessionRatings(p.data.sessionRatings || [])
 
       const initial = {}
       ;(a.data.assignments || []).forEach((x) => {
@@ -91,6 +93,14 @@ export function ClinicianChildPage() {
   }
 
   const sessions = Array.from({ length: 10 }, (_, i) => i + 1)
+
+  function resolveMediaUrlLocal(url) {
+    if (!url) return ''
+    if (url.startsWith('http')) return url
+    const base = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || ''
+    if (base && url.startsWith('/')) return `${base}${url}`
+    return url
+  }
 
   const filteredSubmissions = selectedSession
     ? submissions.filter((s) => s.sessionNumber === selectedSession)
@@ -137,17 +147,17 @@ export function ClinicianChildPage() {
       }
     })
   // 📉 2. Severity (LINE)
+    const sessionRatingMap = new Map(sessionRatings.map((s) => [s.sessionNumber, s]))
+
     const severityData = Array.from({ length: 10 }, (_, i) => {
       const session = i + 1
-      const list = sessionMap[session] || []
-
-      const avg =
-        list.reduce((sum, x) => sum + (x.stuttering || 0), 0) /
-        (list.length || 1)
+      const rating = sessionRatingMap.get(session)
 
       return {
-        session: session,
-        severity: Number(avg.toFixed(2)),
+        session,
+        severity: rating && Number.isFinite(rating.stuttering)
+          ? Number(rating.stuttering)
+          : 0,
       }
     })
 
@@ -193,11 +203,23 @@ export function ClinicianChildPage() {
     // incomplete strategies continuously?
     let consistencyRisk = false
 
-    const incompleteSessions = strategiesPerSession.filter(
-      (x) => x.percent < 60
-    )
+    const incompleteSessionNumbers = strategiesPerSession
+      .filter((x) => x.percent < 100)
+      .map((x) => x.session)
 
-    if (incompleteSessions.length >= 3) {
+    let longestRun = 0
+    let currentRun = 0
+
+    for (const session of sessions) {
+      if (incompleteSessionNumbers.includes(session)) {
+        currentRun += 1
+        longestRun = Math.max(longestRun, currentRun)
+      } else {
+        currentRun = 0
+      }
+    }
+
+    if (longestRun >= 2) {
       consistencyRisk = true
     }
 
@@ -225,7 +247,7 @@ export function ClinicianChildPage() {
 
                   <div className="mt-1 text-sm text-slate-700">
                     Child stuttering severity has increased continuously
-                    over recent sessions.
+                    over recent Days.
                   </div>
 
                   <div className="mt-3 inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
@@ -256,7 +278,7 @@ export function ClinicianChildPage() {
                   </div>
 
                   <div className="mt-1 text-sm text-slate-700">
-                    Parent is repeatedly not completing the assigned strategies across sessions.
+                    Parent is repeatedly not completing the assigned strategies across Days.
                   </div>
 
                   <div className="mt-3 inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
@@ -311,7 +333,7 @@ export function ClinicianChildPage() {
 
                 return (
                   <div className="bg-white border rounded-lg shadow px-3 py-2 text-sm">
-                    <div className="font-semibold">Session {data.session}</div>
+                    <div className="font-semibold">Day : {data.session}</div>
                     <div>
                       Strategies: {data.completed}/{data.total}
                     </div>
@@ -379,7 +401,7 @@ export function ClinicianChildPage() {
               tickCount={10}
               tickMargin={10}
               label={{
-                value: 'Average Stuttering Severity',
+                value: 'Stuttering Severity Rating',
                 angle: -90,
                 position: 'insideLeft',
                 dx: -5,
@@ -390,28 +412,28 @@ export function ClinicianChildPage() {
             />
 
             {/* 🟢 Low Severity Zone */}
-            <ReferenceArea
+            {/* <ReferenceArea
               y1={0}
               y2={3}
               fill="#90EE90"
               fillOpacity={0.3}
-            />
+            /> */}
 
             {/* 🟠 Moderate Severity Zone */}
-            <ReferenceArea
+            {/* <ReferenceArea
               y1={3}
               y2={6}
               fill="#FFD580"
               fillOpacity={0.3}
-            />
+            /> */}
 
             {/* 🔴 High Severity Zone */}
-            <ReferenceArea
+            {/* <ReferenceArea
               y1={6}
               y2={9}
               fill="#FF7F7F"
               fillOpacity={0.3}
-            />
+            /> */}
 
            
 
@@ -425,7 +447,7 @@ export function ClinicianChildPage() {
                 return (
                   <div className="bg-white border rounded-lg shadow px-3 py-2 text-sm">
                     <div className="font-semibold">
-                      Session : {data.session}
+                      Day : {data.session}
                     </div>
 
                     <div>
@@ -455,7 +477,7 @@ export function ClinicianChildPage() {
         </ResponsiveContainer>
         
         {/* 🎨 Severity Labels */}        
-        <div className="flex justify-center gap-6 mt-4 text-sm font-medium">
+        {/* <div className="flex justify-center gap-6 mt-4 text-sm font-medium">
 
           <div className="flex items-center gap-2">
             <div
@@ -481,7 +503,7 @@ export function ClinicianChildPage() {
             <span>High</span>
           </div>
 
-        </div>
+        </div> */}
 
       </Card>
 
@@ -691,7 +713,7 @@ export function ClinicianChildPage() {
         </div>
       </div>
 
-      {/* {error ? <div className="mt-4 text-sm font-medium text-red-700">{error}</div> : null} */}
+      {error ? <div className="mt-4 text-sm font-medium text-red-700">{error}</div> : null}
       {msg ? <div className="mt-4 text-sm font-medium text-emerald-700">{msg}</div> : null}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[22rem_1fr]">
@@ -825,15 +847,15 @@ export function ClinicianChildPage() {
                     variant={selectedSession === s ? 'primary' : 'secondary'}
                     onClick={() => setSelectedSession(s)}
                   >
-                    Session {s}
+                    Day {s}
                   </Button>
                 ))}
               </div>
               <div className="mt-4">
                 {!selectedSession ? (
-                  <div className="text-sm text-slate-600">Select a session to view progress.</div>
+                  <div className="text-sm text-slate-600">Select a Day to view progress.</div>
                 ) : filteredSubmissions.length === 0 ? (
-                  <div className="text-sm text-slate-600">No submissions for this session.</div>
+                  <div className="text-sm text-slate-600">No submissions for this Day.</div>
                 ) : (
                   <div className="grid gap-3">
                     {filteredSubmissions.map((s) => (
@@ -861,7 +883,7 @@ export function ClinicianChildPage() {
                         {s.practiceVideoUrl ? (
                           <div className="mt-3">
                             <video className="mt-2 w-full max-w-xl rounded-xl border border-slate-200 bg-black" controls>
-                              <source src={s.practiceVideoUrl} />
+                              <source src={resolveMediaUrlLocal(s.practiceVideoUrl)} />
                             </video>
                           </div>
                         ) : null}
@@ -963,6 +985,7 @@ function MessagesPanel({ childId }) {
 
   return (
     <Card className="mt-4">
+      {error ? <div className="mb-3 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{error}</div> : null}
       <div className="flex items-end justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-slate-900">Notification from parent</div>

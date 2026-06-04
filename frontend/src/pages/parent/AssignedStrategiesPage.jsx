@@ -39,14 +39,14 @@ export function AssignedStrategiesPage() {
             ನೀಡಲಾದ ತಂತ್ರಗಳು
           </div>
 
-          <p className="mt-2 text-sm text-slate-600">
-            Practice and submit the strategies that are assigned to you for today.
-          </p>
+          {/* <p className="mt-2 text-sm text-slate-600">
+            Practice today's assigned strategies and submit your progress.
+          </p> */}
 
           {/* Kannada */}
-          <p className="mt-1 text-sm text-slate-500">
-            ಇಂದು ನಿಮಗೆ ನೀಡಲಾದ ಅಭ್ಯಾಸ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ಸಲ್ಲಿಸಿ.
-          </p>
+          {/* <p className="mt-1 text-sm text-slate-500">
+           ಇಂದು ನಿಮಗೆ ನೀಡಲಾದ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
+          </p> */}
         </div>
 
         <Button variant="secondary" onClick={load}>
@@ -89,7 +89,7 @@ export function AssignedStrategiesPage() {
             </div>
           ) : (
             assignments.map((a, idx) => (
-              <Link key={a.id} to={`/parent/strategies/${a.id}`} className="block">
+              // <Link key={a.id} to={`/parent/strategies/${a.id}`} className="block">
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -138,14 +138,14 @@ export function AssignedStrategiesPage() {
                     {new Date(a.assignedAt).toLocaleDateString()}
                   </div>
 
-                  {/* Open Button */}
+                  {/* Open Button
                   <div className="mt-4">
                     <div className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
-                      Open Strategy / ತಂತ್ರವನ್ನು ತೆರೆಯಿರಿ
+                      View Strategy / ತಂತ್ರವನ್ನು ವೀಕ್ಷಿಸಿ
                     </div>
-                  </div>
+                  </div> */}
                 </motion.div>
-              </Link>
+              // </Link>
             ))
           )}
         </div>

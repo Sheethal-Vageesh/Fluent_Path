@@ -10,8 +10,8 @@ const practiceSubmissionSchema = new mongoose.Schema(
 
     sessionNumber: { type: Number, required: true, min: 1, max: 10 },
 
-    StutteringSeverityRating: { type: Number, required: true, min: 0, max: 9 },
-    SpeechNaturalnessRating: { type: Number, required: true, min: 1, max: 9 },
+    StutteringSeverityRating: { type: Number, required: false, min: 0, max: 9 },
+    SpeechNaturalnessRating: { type: Number, required: false, min: 1, max: 9 },
 
     durationSeconds: { type: Number, required: true, min: 0, max: 24 * 60 * 60 },
 

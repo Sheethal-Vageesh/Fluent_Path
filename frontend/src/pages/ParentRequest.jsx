@@ -38,7 +38,7 @@ export function ParentRequest() {
         if (!mounted) return
 
         setClinicians(data.clinicians || [])
-      } catch (_e) {
+      } catch {
         if (!mounted) return
         setClinicians([])
       } finally {
@@ -198,11 +198,10 @@ export function ParentRequest() {
                   label="Child Age / ಮಗುವಿನ ವಯಸ್ಸು"
                   type="number"
                   step="0.1"
-                  min="1"
-                  max="18"
+                  min="3"
+                  max="6"
                   value={form.childAge}
                   onChange={e => {
-                    // Restrict to one decimal place
                     let val = e.target.value;
                     if (val.includes('.')) {
                       const [intPart, decPart] = val.split('.');
@@ -212,6 +211,17 @@ export function ParentRequest() {
                   }}
                   placeholder="e.g., 4.2"
                 />
+                {form.childAge && (Number(form.childAge) < 3 || Number(form.childAge) > 6) ? (
+                  <div className="mt-2 text-sm text-red-700">
+                    Child age must be between 3 and 6 years. Please enter the correct age.
+                    <br />
+                    ಮಗುವಿನ ವಯಸ್ಸು 3 ರಿಂದ 6 ವರ್ಷಗಳವರೆಗೆ ಇರಬೇಕು. ದಯವಿಟ್ಟು ಸರಿಯಾದ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ.
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-slate-500">
+                    Enter your child’s age between 3 and 6 years, e.g. 4.2.
+                  </div>
+                )}
               </div>
 
               {/* Parent Info */}
@@ -270,7 +280,12 @@ export function ParentRequest() {
                 </Link>
 
                 <Button
-                  disabled={busy || !form.clinicianId}
+                  disabled={
+                    busy ||
+                    !form.clinicianId ||
+                    (form.childAge &&
+                      (Number(form.childAge) < 1 || Number(form.childAge) > 6))
+                  }
                   className="w-full sm:w-auto"
                 >
                   {busy

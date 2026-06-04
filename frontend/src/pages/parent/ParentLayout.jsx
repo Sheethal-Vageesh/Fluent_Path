@@ -57,7 +57,7 @@ export function ParentLayout() {
       </div>
       <nav className="mt-4 grid gap-1">
         <SideLink to="/parent/dashboard/assigned">Assigned strategies / ನೀಡಲಾದ ತಂತ್ರಗಳು</SideLink>
-        <SideLink to="/parent/dashboard/practice">Practice strategies / ಅಭ್ಯಾಸ ತಂತ್ರಗಳು</SideLink>
+        <SideLink to="/parent/dashboard/practice">Daily Practice / ದೈನಂದಿನ ಅಭ್ಯಾಸ</SideLink>
         <SideLink to="/parent/dashboard/messages">Messages / ಸಂದೇಶಗಳು</SideLink>
       </nav>
       
