@@ -23,14 +23,14 @@ const sessionSubmissionSchema = new mongoose.Schema({
 
   StutteringSeverityRating: {
     type: Number,
-    required: true,
+    required: false,
     min: 0,
     max: 9,
   },
 
   SpeechNaturalnessRating: {
     type: Number,
-    required: true,
+    required: false,
     min: 1,
     max: 9,
   },
