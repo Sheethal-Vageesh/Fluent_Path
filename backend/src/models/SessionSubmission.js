@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { n: TOTAL_SESSIONS } = require('../config/stage')
 
 const sessionSubmissionSchema = new mongoose.Schema({
   parentId: {
@@ -17,19 +18,19 @@ const sessionSubmissionSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 1,
-    max: 10,
+    max: TOTAL_SESSIONS,
   },
 
   StutteringSeverityRating: {
     type: Number,
-    required: false,
+    required: true,
     min: 0,
     max: 9,
   },
 
   SpeechNaturalnessRating: {
     type: Number,
-    required: false,
+    required: true,
     min: 1,
     max: 9,
   },

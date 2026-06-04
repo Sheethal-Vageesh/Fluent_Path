@@ -8,6 +8,8 @@ const { notFoundHandler, errorHandler } = require('./middleware/errors');
 const { authRouter } = require('./routes/auth');
 const { clinicianRouter } = require('./routes/clinicians');
 const { parentRouter } = require('./routes/parents');
+const { n: TOTAL_SESSIONS } = require('./config/stage');
+const { isCloudStorageEnabled } = require('./utils/upload');
 
 function createApp() {
   const app = express();
@@ -36,6 +38,13 @@ function createApp() {
 
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
+
+  app.get('/api/config', (_req, res) => {
+    res.json({
+      totalSessions: TOTAL_SESSIONS,
+      storage: isCloudStorageEnabled() ? 'cloud' : 'local',
+    });
+  });
 
 
   app.use('/api/auth', authRouter);

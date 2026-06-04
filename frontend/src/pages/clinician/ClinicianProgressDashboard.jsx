@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card } from '../../components/ui'
 import { api } from '../../lib/api'
+import { TOTAL_SESSIONS } from '../../config/stage'
 import {
   LineChart,
   Line,
@@ -85,14 +86,14 @@ export function ClinicianProgressDashboard() {
 
         if (
           progressFilter === 'completed' &&
-          c.completedSessions < 10
+          c.completedSessions < TOTAL_SESSIONS
         ) {
           return false
         }
 
         if (
           progressFilter === 'ongoing' &&
-          c.completedSessions === 10
+          c.completedSessions === TOTAL_SESSIONS
         ) {
           return false
         }
@@ -115,7 +116,7 @@ export function ClinicianProgressDashboard() {
 
     const combinedGraphData = []
 
-    for (let day = 1; day <= 10; day++) {
+    for (let day = 1; day <= TOTAL_SESSIONS; day++) {
 
       const row = { day }
 
@@ -305,7 +306,7 @@ export function ClinicianProgressDashboard() {
                   </td>
 
                   {/* <td className="p-3">
-                    {c.completedSessions}/10
+                    {c.completedSessions}/{TOTAL_SESSIONS}
                   </td> */}
                   <td className="p-3 min-w-[140px]">
                     <div className="flex items-center gap-2">
@@ -313,13 +314,13 @@ export function ClinicianProgressDashboard() {
                         <div
                             className="h-2 rounded-full bg-indigo-600 transition-all"
                             style={{
-                            width: `${(c.completedSessions / 10) * 100}%`,
+                            width: `${(c.completedSessions / TOTAL_SESSIONS) * 100}%`,
                             }}
                         />
                         </div>
 
                         <span className="text-xs font-semibold text-slate-700">
-                        {c.completedSessions}/10
+                        {c.completedSessions}/{TOTAL_SESSIONS}
                         </span>
                     </div>
                     </td>

@@ -8,8 +8,9 @@ const { StrategyAssignment } = require('../models/StrategyAssignment');
 const { PracticeSubmission } = require('../models/PracticeSubmission');
 const { Message } = require('../models/Message');
 const { validate } = require('../utils/validate');
-const { createUploader, toPublicUploadUrl } = require('../utils/upload');
+const { createUploader, persistUploadedFile } = require('../utils/upload');
 const { SessionSubmission } = require('../models/SessionSubmission')
+const { n: TOTAL_SESSIONS } = require('../config/stage');
 
 const parentRouter = express.Router();
 
@@ -197,7 +198,10 @@ parentRouter.post(
           .number()
           .int()
           .min(1, 'Session starts from 1 / ಸೆಷನ್ 1 ರಿಂದ ಪ್ರಾರಂಭವಾಗುತ್ತದೆ')
-          .max(10, 'Maximum 10 sessions / ಗರಿಷ್ಠ 10 ಸೆಷನ್'),
+          .max(
+            TOTAL_SESSIONS,
+            `Maximum ${TOTAL_SESSIONS} sessions / ಗರಿಷ್ಠ ${TOTAL_SESSIONS} ಸೆಷನ್`
+          ),
       });
 
       const data = validate(bodySchema, req.body);
@@ -233,7 +237,7 @@ parentRouter.post(
       }
 
       const practiceVideoUrl = req.file
-        ? toPublicUploadUrl(req, req.file.path)
+        ? await persistUploadedFile(req.file, 'practice-videos')
         : '';
 
       const submissionData = {
@@ -343,7 +347,7 @@ parentRouter.get(
         }
       })
 
-      const sessions = Array.from({ length: 10 }, (_, i) => {
+      const sessions = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
         const num = i + 1
         const record = submissionMap[num] || {}
         const startedAt = record.startedAt || null
@@ -385,7 +389,7 @@ parentRouter.get(
         }
       })
 
-      res.json({ sessions })
+      res.json({ sessions, totalSessions: TOTAL_SESSIONS })
     } catch (e) {
       next(e)
     }
@@ -400,6 +404,17 @@ parentRouter.get(
     try {
       const parentId = req.user.parentId
       const sessionNumber = Number(req.params.sessionNumber)
+
+      if (
+        !Number.isInteger(sessionNumber) ||
+        sessionNumber < 1 ||
+        sessionNumber > TOTAL_SESSIONS
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: `Session must be between 1 and ${TOTAL_SESSIONS}`,
+        })
+      }
 
       const parent = await Parent.findById(parentId)
       if (!parent) {
@@ -524,6 +539,17 @@ parentRouter.post(
     try {
       const parentId = req.user.parentId
       const sessionNumber = Number(req.params.sessionNumber)
+
+      if (
+        !Number.isInteger(sessionNumber) ||
+        sessionNumber < 1 ||
+        sessionNumber > TOTAL_SESSIONS
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: `Session must be between 1 and ${TOTAL_SESSIONS}`,
+        })
+      }
 
       const bodySchema = z.object({
         StutteringSeverityRating: z.coerce

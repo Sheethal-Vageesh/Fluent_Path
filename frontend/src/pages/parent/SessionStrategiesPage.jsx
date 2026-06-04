@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Card, Button } from '../../components/ui'
 import { api } from '../../lib/api'
+import { getKannadaDayLabel } from '../../lib/kannadaDays'
 import { motion } from 'framer-motion'
 
 export function SessionStrategiesPage() {
@@ -95,26 +96,13 @@ export function SessionStrategiesPage() {
     }
   }
 
-  const kannadaDays = {
-    1: "ಮೊದಲನೇ ದಿನ",
-    2: "ಎರಡನೇ ದಿನ",
-    3: "ಮೂರನೇ ದಿನ",
-    4: "ನಾಲ್ಕನೇ ದಿನ",
-    5: "ಐದನೇ ದಿನ",
-    6: "ಆರನೇ ದಿನ",
-    7: "ಏಳನೇ ದಿನ",
-    8: "ಎಂಟನೇ ದಿನ",
-    9: "ಒಂಬತ್ತನೇ ದಿನ",
-    10: "ಹತ್ತನೇ ದಿನ",
-  };
-
   return (
     <div className="mx-auto w-full max-w-4xl">
       <div className="flex items-end justify-between gap-3">
   
         <div>
           <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
-            Day {sessionNumber || '–'} /  {kannadaDays[sessionNumber] || '-'} 
+            Day {sessionNumber || '–'} / {getKannadaDayLabel(sessionNumber)} 
           </h2>
 
           <p className="mt-1 text-sm text-slate-600">

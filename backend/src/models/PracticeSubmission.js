@@ -1,5 +1,6 @@
 
 const mongoose = require('mongoose');
+const { n: TOTAL_SESSIONS } = require('../config/stage');
 
 const practiceSubmissionSchema = new mongoose.Schema(
   {
@@ -8,7 +9,7 @@ const practiceSubmissionSchema = new mongoose.Schema(
     assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'StrategyAssignment', required: true, index: true },
     strategyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Strategy', required: true, index: true },
 
-    sessionNumber: { type: Number, required: true, min: 1, max: 10 },
+    sessionNumber: { type: Number, required: true, min: 1, max: TOTAL_SESSIONS },
 
     StutteringSeverityRating: { type: Number, required: false, min: 0, max: 9 },
     SpeechNaturalnessRating: { type: Number, required: false, min: 1, max: 9 },

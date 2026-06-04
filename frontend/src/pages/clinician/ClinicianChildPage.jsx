@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Card } from '../../components/ui'
 import { api } from '../../lib/api'
+import { TOTAL_SESSIONS } from '../../config/stage'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
   BarChart, Bar, AreaChart, Area, ReferenceArea,Cell, ReferenceLine,
@@ -92,7 +93,7 @@ export function ClinicianChildPage() {
     }
   }
 
-  const sessions = Array.from({ length: 10 }, (_, i) => i + 1)
+  const sessions = Array.from({ length: TOTAL_SESSIONS }, (_, i) => i + 1)
 
   function resolveMediaUrlLocal(url) {
     if (!url) return ''
@@ -134,7 +135,7 @@ export function ClinicianChildPage() {
     .sort((a, b) => a - b)
 
   // 📊 1. Strategies per session (BAR)
-    const strategiesPerSession = Array.from({ length: 10 }, (_, i) => {
+    const strategiesPerSession = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
       const sessionNum = i + 1
       const completed = sessionMap[sessionNum]?.length || 0
       const total = assigned.length || 0
@@ -149,7 +150,7 @@ export function ClinicianChildPage() {
   // 📉 2. Severity (LINE)
     const sessionRatingMap = new Map(sessionRatings.map((s) => [s.sessionNumber, s]))
 
-    const severityData = Array.from({ length: 10 }, (_, i) => {
+    const severityData = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
       const session = i + 1
       const rating = sessionRatingMap.get(session)
 
@@ -313,8 +314,8 @@ export function ClinicianChildPage() {
               <XAxis
                 dataKey="session"
                 type="number"
-                domain={[1, 10]}
-                tickCount={10}
+                domain={[1, TOTAL_SESSIONS]}
+                tickCount={Math.min(TOTAL_SESSIONS, 10)}
                 label={{ value: 'Days', position: 'insideBottom', dy: 5}}
               />
 
@@ -398,7 +399,7 @@ export function ClinicianChildPage() {
             <YAxis
               domain={[0, 9]}
               ticks={[0,1,2,3,4,5,6,7,8,9]}
-              tickCount={10}
+              tickCount={Math.min(TOTAL_SESSIONS, 10)}
               tickMargin={10}
               label={{
                 value: 'Stuttering Severity Rating',
@@ -512,7 +513,7 @@ export function ClinicianChildPage() {
     
       <Card>
         <div className="mb-3 font-semibold text-lg">
-          Strategies Practiced Over 10 Days
+          Strategies Practiced Over {TOTAL_SESSIONS} Days
         </div>
 
         <ResponsiveContainer width="100%" height={320}>

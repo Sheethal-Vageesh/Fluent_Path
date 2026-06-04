@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/ui'
 import { api } from '../../lib/api'
+import { getKannadaDayLabel } from '../../lib/kannadaDays'
 
 function SessionCard({ session, completed, active, expiresAt, locked, lockedUntil, onClick }) {
   let color = 'bg-slate-100 border-slate-300 text-slate-700'
@@ -27,19 +28,6 @@ function SessionCard({ session, completed, active, expiresAt, locked, lockedUnti
     }
   }
 
-  const kannadaDays = {
-    1: "ಮೊದಲನೇ ದಿನ",
-    2: "ಎರಡನೇ ದಿನ",
-    3: "ಮೂರನೇ ದಿನ",
-    4: "ನಾಲ್ಕನೇ ದಿನ",
-    5: "ಐದನೇ ದಿನ",
-    6: "ಆರನೇ ದಿನ",
-    7: "ಏಳನೇ ದಿನ",
-    8: "ಎಂಟನೇ ದಿನ",
-    9: "ಒಂಬತ್ತನೇ ದಿನ",
-    10: "ಹತ್ತನೇ ದಿನ",
-  };
-
   return (
     <button
       disabled={locked}
@@ -47,8 +35,7 @@ function SessionCard({ session, completed, active, expiresAt, locked, lockedUnti
       className={`rounded-2xl border-2 p-4 text-left shadow-sm transition hover:shadow-md disabled:cursor-not-allowed ${color}`}
     >
       <div className="text-lg font-bold">
-        Day {session} / {session}ನೇ ದಿನ
-        {/* {kannadaDays[session]} */}
+        Day {session} / {getKannadaDayLabel(session)}
       </div>
 
       <div className="mt-1 text-xs opacity-90 whitespace-pre-line">

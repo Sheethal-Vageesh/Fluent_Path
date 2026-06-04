@@ -91,6 +91,7 @@ export function AssignedStrategiesPage() {
             assignments.map((a, idx) => (
               // <Link key={a.id} to={`/parent/strategies/${a.id}`} className="block">
                 <motion.div
+                  key={a.id || `assignment-${idx}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{

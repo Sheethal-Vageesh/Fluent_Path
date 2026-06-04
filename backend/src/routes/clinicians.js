@@ -12,7 +12,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { validate } = require('../utils/validate');
 const { sendChildIdNotification, sendStrategiesAssignedNotification } = require('../utils/mailer');
 const { sendChildIdSms } = require('../utils/sms');
-const { createUploader, toPublicUploadUrl } = require('../utils/upload');
+const { createUploader, persistUploadedFile } = require('../utils/upload');
 const { SessionSubmission } = require('../models/SessionSubmission')
 
 
@@ -508,7 +508,9 @@ clinicianRouter.post(
   try {
     const clinicianId = req.user.clinicianId;
     const data = validate(createStrategySchema, req.body);
-    const demoVideoUrl = req.file ? toPublicUploadUrl(req, req.file.path) : '';
+    const demoVideoUrl = req.file
+      ? await persistUploadedFile(req.file, 'strategy-demos')
+      : '';
     const strategy = await Strategy.create({
       clinicianId,
       title: data.title,
