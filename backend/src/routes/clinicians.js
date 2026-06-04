@@ -13,6 +13,7 @@ const { validate } = require('../utils/validate');
 const { sendChildIdNotification, sendStrategiesAssignedNotification } = require('../utils/mailer');
 const { sendChildIdSms } = require('../utils/sms');
 const { createUploader, persistUploadedFile } = require('../utils/upload');
+const { signMediaUrl } = require('../utils/mediaAccess');
 const { SessionSubmission } = require('../models/SessionSubmission')
 
 
@@ -218,13 +219,19 @@ clinicianRouter.get('/children/:childId/assignments', requireAuth, requireRole('
       .populate('strategyId');
 
     res.json({
-      assignments: assignments.map((a) => ({
-        id: a._id,
-        assignedAt: a.assignedAt,
-        strategy: a.strategyId
-          ? { id: a.strategyId._id, title: a.strategyId.title, demoVideoUrl: a.strategyId.demoVideoUrl || '' }
-          : null,
-      })),
+      assignments: await Promise.all(
+        assignments.map(async (a) => ({
+          id: a._id,
+          assignedAt: a.assignedAt,
+          strategy: a.strategyId
+            ? {
+                id: a.strategyId._id,
+                title: a.strategyId.title,
+                demoVideoUrl: await signMediaUrl(a.strategyId.demoVideoUrl),
+              }
+            : null,
+        }))
+      ),
     });
   } catch (e) {
     next(e);
@@ -314,16 +321,18 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
       .sort({ sessionNumber: 1 });
 
     res.json({
-      submissions: submissions.map((s) => ({
-        id: s._id,
-        sessionNumber: s.sessionNumber,
-        stuttering: s.StutteringSeverityRating,
-        naturalness: s.SpeechNaturalnessRating,
-        durationSeconds: s.durationSeconds,
-        practiceVideoUrl: s.practiceVideoUrl || '',
-        submittedAt: s.submittedAt,
-        strategy: s.strategyId ? { id: s.strategyId._id, title: s.strategyId.title } : null,
-      })),
+      submissions: await Promise.all(
+        submissions.map(async (s) => ({
+          id: s._id,
+          sessionNumber: s.sessionNumber,
+          stuttering: s.StutteringSeverityRating,
+          naturalness: s.SpeechNaturalnessRating,
+          durationSeconds: s.durationSeconds,
+          practiceVideoUrl: await signMediaUrl(s.practiceVideoUrl),
+          submittedAt: s.submittedAt,
+          strategy: s.strategyId ? { id: s.strategyId._id, title: s.strategyId.title } : null,
+        }))
+      ),
       sessionRatings: sessionRatings.map((s) => ({
         id: s._id,
         sessionNumber: s.sessionNumber,
@@ -474,13 +483,15 @@ clinicianRouter.get('/strategies', requireAuth, requireRole('clinician'), async 
     const clinicianId = req.user.clinicianId;
     const strategies = await Strategy.find({ clinicianId }).sort({ createdAt: -1 });
     res.json({
-      strategies: strategies.map((s) => ({
-        id: s._id,
-        title: s.title,
-        kannadaText: s.kannadaText || '',
-        demoVideoUrl: s.demoVideoUrl || '',
-        createdAt: s.createdAt,
-      })),
+      strategies: await Promise.all(
+        strategies.map(async (s) => ({
+          id: s._id,
+          title: s.title,
+          kannadaText: s.kannadaText || '',
+          demoVideoUrl: await signMediaUrl(s.demoVideoUrl),
+          createdAt: s.createdAt,
+        }))
+      ),
     });
   } catch (e) {
     next(e);
@@ -518,7 +529,12 @@ clinicianRouter.post(
       demoVideoUrl,
     });
     res.status(201).json({
-      strategy: { id: strategy._id, title: strategy.title, demoVideoUrl: strategy.demoVideoUrl, createdAt: strategy.createdAt },
+      strategy: {
+        id: strategy._id,
+        title: strategy.title,
+        demoVideoUrl: await signMediaUrl(strategy.demoVideoUrl),
+        createdAt: strategy.createdAt,
+      },
     });
   } catch (e) {
     if (e && e.code === 11000) {

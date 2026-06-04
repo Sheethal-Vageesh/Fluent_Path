@@ -10,6 +10,7 @@ const { PracticeSubmission } = require('../models/PracticeSubmission');
 const { Message } = require('../models/Message');
 const { validate } = require('../utils/validate');
 const { createUploader, persistUploadedFile } = require('../utils/upload');
+const { signMediaUrl } = require('../utils/mediaAccess');
 const { SessionSubmission } = require('../models/SessionSubmission')
 const { n: TOTAL_SESSIONS } = require('../config/stage');
 
@@ -145,18 +146,20 @@ parentRouter.get('/assignments', requireAuth, requireRole('parent'), async (req,
       .populate('strategyId');
 
     res.json({
-      assignments: assignments.map((a) => ({
-        id: a._id,
-        assignedAt: a.assignedAt,
-        strategy: a.strategyId
-          ? {
-              id: a.strategyId._id,
-              title: a.strategyId.title,
-              kannadaText: a.strategyId.kannadaText || '',
-              demoVideoUrl: a.strategyId.demoVideoUrl || '',
-            }
-          : null,
-      })),
+      assignments: await Promise.all(
+        assignments.map(async (a) => ({
+          id: a._id,
+          assignedAt: a.assignedAt,
+          strategy: a.strategyId
+            ? {
+                id: a.strategyId._id,
+                title: a.strategyId.title,
+                kannadaText: a.strategyId.kannadaText || '',
+                demoVideoUrl: await signMediaUrl(a.strategyId.demoVideoUrl),
+              }
+            : null,
+        }))
+      ),
     });
   } catch (e) {
     next(e);
@@ -182,19 +185,21 @@ parentRouter.get('/assignments/completed', requireAuth, requireRole('parent'), a
       .populate('strategyId');
 
     res.json({
-      assignments: assignments.map((a) => ({
-        id: a._id,
-        assignedAt: a.assignedAt,
-        completedAt: a.completedAt,
-        strategy: a.strategyId
-          ? {
-              id: a.strategyId._id,
-              title: a.strategyId.title,
-              kannadaText: a.strategyId.kannadaText || '',
-              demoVideoUrl: a.strategyId.demoVideoUrl || '',
-            }
-          : null,
-      })),
+      assignments: await Promise.all(
+        assignments.map(async (a) => ({
+          id: a._id,
+          assignedAt: a.assignedAt,
+          completedAt: a.completedAt,
+          strategy: a.strategyId
+            ? {
+                id: a.strategyId._id,
+                title: a.strategyId.title,
+                kannadaText: a.strategyId.kannadaText || '',
+                demoVideoUrl: await signMediaUrl(a.strategyId.demoVideoUrl),
+              }
+            : null,
+        }))
+      ),
     });
   } catch (e) {
     next(e);
@@ -220,13 +225,13 @@ parentRouter.get('/assignments/:assignmentId', requireAuth, requireRole('parent'
         id: assignment._id,
         assignedAt: assignment.assignedAt,
         strategy: assignment.strategyId
-        ? {
-            id: assignment.strategyId._id,
-            title: assignment.strategyId.title,
-            kannadaText: assignment.strategyId.kannadaText || '',
-            demoVideoUrl: assignment.strategyId.demoVideoUrl || '',
-          }
-        : null,
+          ? {
+              id: assignment.strategyId._id,
+              title: assignment.strategyId.title,
+              kannadaText: assignment.strategyId.kannadaText || '',
+              demoVideoUrl: await signMediaUrl(assignment.strategyId.demoVideoUrl),
+            }
+          : null,
       },
     });
   } catch (e) {
@@ -543,25 +548,29 @@ parentRouter.get(
       }
 
       res.json({
-        assignments: assignments.map((a) => ({
-          id: a._id,
-          strategy: a.strategyId
-            ? {
-                id: a.strategyId._id,
-                title: a.strategyId.title,
-                kannadaText: a.strategyId.kannadaText || '',
-                demoVideoUrl: a.strategyId.demoVideoUrl || '',
-              }
-            : null,
-        })),
+        assignments: await Promise.all(
+          assignments.map(async (a) => ({
+            id: a._id,
+            strategy: a.strategyId
+              ? {
+                  id: a.strategyId._id,
+                  title: a.strategyId.title,
+                  kannadaText: a.strategyId.kannadaText || '',
+                  demoVideoUrl: await signMediaUrl(a.strategyId.demoVideoUrl),
+                }
+              : null,
+          }))
+        ),
 
-        submissions: submissions.map((s) => ({
-          assignmentId: s.assignmentId,
-          sessionNumber: s.sessionNumber,
-          durationSeconds: s.durationSeconds,
-          practiceVideoUrl: s.practiceVideoUrl || '',
-          submittedAt: s.submittedAt,
-        })),
+        submissions: await Promise.all(
+          submissions.map(async (s) => ({
+            assignmentId: s.assignmentId,
+            sessionNumber: s.sessionNumber,
+            durationSeconds: s.durationSeconds,
+            practiceVideoUrl: await signMediaUrl(s.practiceVideoUrl),
+            submittedAt: s.submittedAt,
+          }))
+        ),
 
         // IMPORTANT
         sessionSubmitted: !!sessionSubmission.submittedAt,
