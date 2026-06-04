@@ -11,12 +11,46 @@ const { parentRouter } = require('./routes/parents');
 const { n: TOTAL_SESSIONS } = require('./config/stage');
 const { isCloudStorageEnabled } = require('./utils/upload');
 
+function buildContentSecurityPolicy() {
+  const mediaSrc = ["'self'", 'blob:'];
+  const connectSrc = ["'self'"];
+
+  const bucket = process.env.S3_BUCKET;
+  const region = process.env.AWS_REGION || 'us-east-1';
+  if (bucket) {
+    mediaSrc.push(`https://${bucket}.s3.${region}.amazonaws.com`);
+    mediaSrc.push(`https://${bucket}.s3.amazonaws.com`);
+    connectSrc.push(`https://${bucket}.s3.${region}.amazonaws.com`);
+    connectSrc.push(`https://${bucket}.s3.amazonaws.com`);
+  }
+
+  const publicBase = (process.env.S3_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  if (publicBase) {
+    mediaSrc.push(publicBase);
+    connectSrc.push(publicBase);
+  }
+
+  return {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:', ...mediaSrc.filter((s) => s.startsWith('https://'))],
+      mediaSrc,
+      connectSrc,
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'self'"],
+    },
+  };
+}
+
 function createApp() {
   const app = express();
 
-  // Needed so videos served from the API (port 5000) can be played in the UI (port 5173)
   app.use(
     helmet({
+      contentSecurityPolicy: buildContentSecurityPolicy(),
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
   );
