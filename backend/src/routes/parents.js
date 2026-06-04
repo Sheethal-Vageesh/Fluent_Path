@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { z } = require('zod');
 
 const { requireAuth, requireRole } = require('../middleware/auth');
@@ -25,6 +26,64 @@ function nextMidnightIST(date) {
   // midnight IST of the next day -> compute its UTC ms and subtract offset
   const nextMidnightUtc = Date.UTC(y, m, d + 1) - IST_OFFSET
   return new Date(nextMidnightUtc)
+}
+
+function safeNextMidnightIST(date) {
+  const d = date instanceof Date ? date : new Date(date)
+  if (Number.isNaN(d.getTime())) return null
+  return nextMidnightIST(d)
+}
+
+async function getOrStartSessionSubmission(parent, sessionNumber, now) {
+  if (!parent.clinicianId) {
+    const err = new Error(
+      'Parent account is missing clinician link / ಪೋಷಕ ಖಾತೆಯಲ್ಲಿ ವೈದ್ಯರ ಲಿಂಕ್ ಇಲ್ಲ'
+    )
+    err.statusCode = 400
+    throw err
+  }
+
+  const AUTO_SUBMIT_MS = 24 * 60 * 60 * 1000
+
+  let sessionSubmission = await SessionSubmission.findOne({
+    parentId: parent._id,
+    sessionNumber,
+  })
+
+  if (!sessionSubmission) {
+    try {
+      sessionSubmission = await SessionSubmission.create({
+        parentId: parent._id,
+        clinicianId: parent.clinicianId,
+        sessionNumber,
+        startedAt: now,
+      })
+    } catch (e) {
+      if (e && e.code === 11000) {
+        sessionSubmission = await SessionSubmission.findOne({
+          parentId: parent._id,
+          sessionNumber,
+        })
+      } else {
+        throw e
+      }
+    }
+  }
+
+  if (
+    sessionSubmission &&
+    !sessionSubmission.submittedAt &&
+    sessionSubmission.startedAt
+  ) {
+    const startedAtDate = new Date(sessionSubmission.startedAt)
+    if (now - startedAtDate > AUTO_SUBMIT_MS) {
+      sessionSubmission.submittedAt = now
+      sessionSubmission.autoSubmitted = true
+      await sessionSubmission.save()
+    }
+  }
+
+  return sessionSubmission
 }
 
 
@@ -405,6 +464,12 @@ parentRouter.get(
       const parentId = req.user.parentId
       const sessionNumber = Number(req.params.sessionNumber)
 
+      if (!parentId || !mongoose.Types.ObjectId.isValid(parentId)) {
+        const err = new Error('Invalid parent session / ಅಮಾನ್ಯ ಪೋಷಕ ಸೆಷನ್')
+        err.statusCode = 401
+        throw err
+      }
+
       if (
         !Number.isInteger(sessionNumber) ||
         sessionNumber < 1 ||
@@ -433,43 +498,30 @@ parentRouter.get(
           return res.status(400).json({ ok: false, error: 'Previous session not submitted / ಹಿಂದಿನ ಸೆಷನ್ ಸಲ್ಲಿಸಲಾಗಿಲ್ಲ', lockedUntil: null })
         }
         if (!prev.autoSubmitted) {
-          const nextMidnight = nextMidnightIST(new Date(prev.submittedAt))
-          if (now < nextMidnight) {
+          const nextMidnight = safeNextMidnightIST(prev.submittedAt)
+          if (nextMidnight && now < nextMidnight) {
             return res.status(400).json({ ok: false, error: 'Next session locked until midnight IST after manual submission / ಮುಂದಿನ ಸೆಷನ್ IST ಮಧ್ಯರಾತ್ರಿ ತೆರೆಯಲಾಗುತ್ತದೆ', lockedUntil: nextMidnight })
           }
         }
       }
 
-      let sessionSubmission = await SessionSubmission.findOne({
-        parentId,
+      const sessionSubmission = await getOrStartSessionSubmission(
+        parent,
         sessionNumber,
-      })
-
-      if (!sessionSubmission) {
-        sessionSubmission = await SessionSubmission.create({
-          parentId,
-          clinicianId: parent.clinicianId,
-          sessionNumber,
-          startedAt: now,
-        })
-      } else if (!sessionSubmission.submittedAt && sessionSubmission.startedAt) {
-        const startedAtDate = new Date(sessionSubmission.startedAt)
-        if (now - startedAtDate > AUTO_SUBMIT_MS) {
-          sessionSubmission.submittedAt = now
-          sessionSubmission.autoSubmitted = true
-          await sessionSubmission.save()
-        }
-      }
+        now
+      )
 
       const assignments = await StrategyAssignment.find({
         parentId,
         active: true,
-      }).populate('strategyId')
+      })
+        .populate('strategyId')
+        .lean()
 
       const submissions = await PracticeSubmission.find({
         parentId,
         sessionNumber,
-      })
+      }).lean()
 
       // compute locked and lockedUntil for this session (per new rules)
       let sessionLocked = false
@@ -484,9 +536,9 @@ parentRouter.get(
           sessionLocked = false
           sessionLockedUntil = null
         } else {
-          const nextMidnight = nextMidnightIST(new Date(prev.submittedAt))
+          const nextMidnight = safeNextMidnightIST(prev.submittedAt)
           sessionLockedUntil = nextMidnight
-          if (now < nextMidnight) sessionLocked = true
+          if (nextMidnight && now < nextMidnight) sessionLocked = true
         }
       }
 
@@ -503,7 +555,13 @@ parentRouter.get(
             : null,
         })),
 
-        submissions,
+        submissions: submissions.map((s) => ({
+          assignmentId: s.assignmentId,
+          sessionNumber: s.sessionNumber,
+          durationSeconds: s.durationSeconds,
+          practiceVideoUrl: s.practiceVideoUrl || '',
+          submittedAt: s.submittedAt,
+        })),
 
         // IMPORTANT
         sessionSubmitted: !!sessionSubmission.submittedAt,

@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const { createApp } = require('./app');
 const { connectToDb } = require('./utils/db');
+const { TOTAL_SESSIONS } = require('./config/stage');
+const { isCloudStorageEnabled } = require('./utils/upload');
 
 const PORT = process.env.PORT || 5000;
 
@@ -12,8 +14,9 @@ async function main() {
   const app = createApp();
 
   app.listen(PORT, () => {
-    // Intentionally minimal: avoids leaking env/config
     console.log(`API listening on http://localhost:${PORT}`);
+    console.log(`Stage sessions (STAGE_N): ${TOTAL_SESSIONS}`);
+    console.log(`Video storage: ${isCloudStorageEnabled() ? 'cloud (S3)' : 'local (uploads/)'}`);
   });
 }
 
