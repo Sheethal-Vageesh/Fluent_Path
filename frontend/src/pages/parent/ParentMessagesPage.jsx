@@ -82,8 +82,8 @@ export function ParentMessagesPage() {
 
           {/* Kannada */}
           <p className="mt-1 text-sm text-slate-500">
-            ನಿಮ್ಮ ವೈದ್ಯರೊಂದಿಗೆ ಸಂಪರ್ಕಿಸಲು ಇದನ್ನು ಬಳಸಿ.
-            ನೀವು ಕಳುಹಿಸುವ ಸಂದೇಶಗಳು ವೈದ್ಯರ “ಪೋಷಕರ ಸೂಚನೆಗಳು”
+            ನಿಮ್ಮ ತಜ್ಞರೊಂದಿಗೆ ಸಂಪರ್ಕಿಸಲು ಇದನ್ನು ಬಳಸಿ.
+            ನೀವು ಕಳುಹಿಸುವ ಸಂದೇಶಗಳು ತಜ್ಞರ “ಪೋಷಕರ ಸೂಚನೆಗಳು”
             ವಿಭಾಗದಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.
           </p>
         </div>
@@ -112,7 +112,7 @@ export function ParentMessagesPage() {
         </div>
 
         <div className="text-xs font-medium text-indigo-700">
-          ವೈದ್ಯರಿಂದ ಸೂಚನೆಗಳು
+        ತಜ್ಞರಿಂದ ಸೂಚನೆಗಳು
         </div>
 
         <div className="mt-1 text-xs text-slate-500">
@@ -146,7 +146,7 @@ export function ParentMessagesPage() {
 
               <div className="mt-2 text-slate-500">
                 ಇನ್ನೂ ಯಾವುದೇ ಸಂದೇಶಗಳಿಲ್ಲ.
-                ಸಂಭಾಷಣೆ ಪ್ರಾರಂಭಿಸಲು ನಿಮ್ಮ ವೈದ್ಯರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.
+                ಸಂಭಾಷಣೆ ಪ್ರಾರಂಭಿಸಲು ನಿಮ್ಮ ತಜ್ಞರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.
               </div>
             </div>
           ) : null}
@@ -178,7 +178,7 @@ export function ParentMessagesPage() {
                     >
                       {mine
                         ? 'You / ನೀವು'
-                        : 'Clinician / ವೈದ್ಯರು'}
+                        : 'Clinician / ತಜ್ಞರು'}
                     </div>
 
                     {/* Message */}
@@ -213,7 +213,7 @@ export function ParentMessagesPage() {
           </div>
 
           <div className="text-xs font-medium text-indigo-700">
-            ವೈದ್ಯರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ
+          ತಜ್ಞರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ
           </div>
 
           <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -222,7 +222,7 @@ export function ParentMessagesPage() {
               onChange={(e) => setText(e.target.value)}
               rows={3}
               className="w-full resize-none rounded-2xl border border-slate-200/80 bg-white/90 px-3 py-2 text-sm outline-none transition focus-visible:fp-focus"
-              placeholder="Type a message to your clinician… / ನಿಮ್ಮ ವೈದ್ಯರಿಗೆ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ..."
+              placeholder="Type a message to your clinician… / ನಿಮ್ಮ ತಜ್ಞರಿಗೆ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ..."
             />
 
             <Button

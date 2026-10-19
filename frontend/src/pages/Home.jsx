@@ -96,7 +96,7 @@ export function Home() {
                       Parents practise the strategies, indicate strategies implemented & duration of home training, submit the stuttering severity ratings, and upload the home training video (optional)
                     </div>
                     <div className="text-slate-500">
-                      ಪೋಷಕರು ಈ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಬೇಕು, ಅಳವಡಿಸಿಕೊಂಡ ತಂತ್ರಗಳು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ಅವಧಿಯನ್ನು ನಮೂದಿಸಬೇಕು, ತೊದಲುವಿಕೆ ತೀವ್ರತೆಯ ರೇಟಿಂಗ್‌ಗಳನ್ನು (stutteringSeverity ratings) ಸಲ್ಲಿಸಬೇಕು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ವೀಡಿಯೊವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಬೇಕು (ಇದು ಐಚ್ಛಿಕ) 
+                      ಪೋಷಕರು ಈ ತಂತ್ರಗಳನ್ನು ಅಭ್ಯಾಸ ಮಾಡಬೇಕು, ಅಳವಡಿಸಿಕೊಂಡ ತಂತ್ರಗಳು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ಅವಧಿಯನ್ನು ನಮೂದಿಸಬೇಕು, ತೊದಲುವಿಕೆ ತೀವ್ರತೆಯ ರೇಟಿಂಗ್‌ಗಳನ್ನು (stutteringSeverity ratings) ಸಲ್ಲಿಸಬೇಕು ಮತ್ತು ಮನೆ ತರಬೇತಿಯ ವೀಡಿಯೊವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಬೇಕು (ಇದು ಐಚ್ಛಿಕ).
                     </div>
                   </li>
 

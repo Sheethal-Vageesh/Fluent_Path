@@ -112,7 +112,7 @@ export function ParentStrategyPage() {
               <p className="mt-2 text-sm text-slate-600">
                 Watch the demo (if available), practice, then submit your progress.
                 <br />
-                (ಲಭ್ಯವಿದ್ದರೆ) ಡೆಮೊ ವೀಡಿಯೊ ನೋಡಿ , ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
+                ಡೆಮೊ ವೀಡಿಯೊ ನೋಡಿ (ಲಭ್ಯವಿದ್ದರೆ), ಅಭ್ಯಾಸ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಸಲ್ಲಿಸಿ.
               </p>
             </div>
 
@@ -143,13 +143,19 @@ export function ParentStrategyPage() {
               </div>
             ) : assignment?.strategy ? (
               <>
-                <div className="text-lg font-bold text-slate-900">
-                  {assignment.strategy.title}
-                </div>
-
-                <div className="mt-1 text-xs font-medium text-indigo-600">
+                <div className="inline-flex items-center rounded-full border border-indigo-300 bg-white px-3 py-1 text-xs font-semibold text-indigo-900 mb-5">
                   Practice Day {sessionNumber} / ಅಭ್ಯಾಸ ದಿನ {sessionNumber}
                 </div>
+               
+                <div className="text-lg font-bold text-slate-900 ">
+                  {assignment.strategy.title}
+                </div>
+                <div className="text-lg font-bold text-slate-900">
+                  {assignment.strategy.kannadaText}
+                </div>
+                
+
+                
 
                 {assignment.strategy.demoVideoUrl ? (
                   <div className="mt-4">
@@ -159,15 +165,21 @@ export function ParentStrategyPage() {
                       <video
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-black"
                         controls
+                        playsInline
+                        crossOrigin="anonymous"
+                        preload="metadata"
                       >
-                        <source src={resolveMediaUrl(assignment.strategy.demoVideoUrl)} />
+                        <source
+                          src={resolveMediaUrl(assignment.strategy.demoVideoUrl)}
+                          type="video/mp4"
+                        />
                       </video>
                   </div>
                 ) : (
                   <div className="mt-3 text-sm text-slate-600">
                     No demo video provided by clinician.
                     <br />
-                    ಕ್ಲಿನಿಷಿಯನ್ ಯಾವುದೇ ಡೆಮೊ ವೀಡಿಯೊ ನೀಡಿಲ್ಲ.
+                    ತಜ್ಞರು ಯಾವುದೇ ಡೆಮೊ ವೀಡಿಯೊ ನೀಡಿಲ್ಲ.
                   </div>
                 )}
               
@@ -240,7 +252,7 @@ export function ParentStrategyPage() {
                     <div className="mt-1 text-xs text-slate-500">
                       Optional video for clinician reference.
                       <br />
-                      ಕ್ಲಿನಿಷಿಯನ್ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ವೀಡಿಯೊ.
+                      ತಜ್ಞರ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ವೀಡಿಯೊ.
                     </div>
                   </label>
 

@@ -315,12 +315,12 @@ export function SessionStrategiesPage() {
                 onClick={submitSession}
               >
                 {sessionSubmitted
-                  ? 'Session Submitted / ಸೆಷನ್ ಸಲ್ಲಿಸಲಾಗಿದೆ'
+                  ? 'Submitted / ಸಲ್ಲಿಸಲಾಗಿದೆ'
                   : sessionActive
                   ? busy
                     ? 'Submitting...'
-                    : 'Submit Session / ಸೆಷನ್ ಸಲ್ಲಿಸಿ'
-                  : 'Session not active'
+                    : 'Submit / ಸಲ್ಲಿಸಿ'
+                  : 'not active'
                 }
               </Button>
             </div>

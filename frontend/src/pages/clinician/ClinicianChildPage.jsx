@@ -32,9 +32,10 @@ export function ClinicianChildPage() {
   const [checked, setChecked] = useState({})
   const [submissions, setSubmissions] = useState([])
   const [sessionRatings, setSessionRatings] = useState([])
+  const [clinicianRatings, setClinicianRatings] = useState([])
   const [selectedSession, setSelectedSession] = useState(null)
 
-  const [tab, setTab] = useState('assign') // assign | progress | messages
+  const [tab, setTab] = useState('assign') // assign | progress | dashboard | rate | messages
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -58,6 +59,7 @@ export function ClinicianChildPage() {
       setAssigned(a.data.assignments || [])
       setSubmissions(p.data.submissions || [])
       setSessionRatings(p.data.sessionRatings || [])
+      setClinicianRatings(p.data.clinicianRatings || [])
 
       const initial = {}
       ;(a.data.assignments || []).forEach((x) => {
@@ -111,8 +113,20 @@ export function ClinicianChildPage() {
 
 
 
- function TherapyDashboard({ submissions = [], assigned = [] }) {
-  if (!Array.isArray(submissions) || submissions.length === 0) {
+ function TherapyDashboard({
+  submissions = [],
+  assigned = [],
+  sessionRatings = [],
+  clinicianRatings = [],
+}) {
+  const hasSubmissions = Array.isArray(submissions) && submissions.length > 0
+  const hasClinicianRatings =
+    Array.isArray(clinicianRatings) && clinicianRatings.length > 0
+  const hasParentRatings =
+    Array.isArray(sessionRatings) &&
+    sessionRatings.some((s) => s.stuttering != null && s.stuttering !== '')
+
+  if (!hasSubmissions && !hasClinicianRatings && !hasParentRatings) {
     return (
       <div className="mt-4 text-sm text-slate-600">
         No therapy data available yet.
@@ -156,11 +170,24 @@ export function ClinicianChildPage() {
 
       return {
         session,
-        severity: rating && Number.isFinite(rating.stuttering)
-          ? Number(rating.stuttering)
-          : 0,
+        severity:
+          rating && Number.isFinite(rating.stuttering)
+            ? Number(rating.stuttering)
+            : null,
       }
     })
+
+  const clinicianSeverityData = [...(clinicianRatings || [])]
+    .sort((a, b) => a.day - b.day)
+    .map((r) => ({
+      day: r.day,
+      dayValue: r.dayValue,
+      severity: r.rating,
+    }))
+
+  const maxClinicianDay = clinicianSeverityData.length
+    ? Math.max(...clinicianSeverityData.map((d) => d.day))
+    : 1
 
   // 📊 3. Strategy usage (BAR)
   const strategyCountMap = {}
@@ -187,8 +214,9 @@ export function ClinicianChildPage() {
     // severity increasing?
     let severityRisk = false
 
-    const validSeverity = severityData
-      .filter((x) => x.severity > 0)
+    const validSeverity = severityData.filter(
+      (x) => x.severity != null && x.severity > 0
+    )
 
     if (validSeverity.length >= 3) {
       const last3 = validSeverity.slice(-3)
@@ -358,16 +386,21 @@ export function ClinicianChildPage() {
         </div>
       </Card>
 
-      {/* 📉 Severity curve */}
+      {/* 📉 Parent-reported severity */}
     
       <Card>
         <div className="font-semibold mb-2">
-          Stuttering Severity Trend
+          Parent-Reported Stuttering Severity
         </div>
 
+        {!hasParentRatings ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            No parent severity ratings yet.
+          </div>
+        ) : (
         <ResponsiveContainer width="100%" height="100%" minHeight={360}>
           <AreaChart
-            data={severityData}
+            data={severityData.filter((d) => d.severity != null)}
             margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
           >
 
@@ -386,10 +419,10 @@ export function ClinicianChildPage() {
             <XAxis
               dataKey="session"
               type="number"
-              domain={[1, 10]}
-              tickCount={10}
+              domain={[1, TOTAL_SESSIONS]}
+              tickCount={Math.min(TOTAL_SESSIONS, 10)}
               label={{
-                value: 'Days',
+                value: 'Practice days',
                 position: 'insideBottom',
                 dy: 10
               }}
@@ -476,6 +509,7 @@ export function ClinicianChildPage() {
 
           </AreaChart>
         </ResponsiveContainer>
+        )}
         
         {/* 🎨 Severity Labels */}        
         {/* <div className="flex justify-center gap-6 mt-4 text-sm font-medium">
@@ -506,6 +540,85 @@ export function ClinicianChildPage() {
 
         </div> */}
 
+      </Card>
+
+      {/* 📉 Clinician live-session severity */}
+      <Card>
+        <div className="font-semibold mb-2">
+          Clinician Live Session — Stuttering Severity
+        </div>
+
+        {!hasClinicianRatings ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            No clinician ratings yet. Add ratings in the &quot;Rate Stuttering Severity&quot; tab.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+            <AreaChart
+              data={clinicianSeverityData}
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            >
+              <defs>
+                <linearGradient id="clinicianSeverityLine" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+
+              <XAxis
+                dataKey="day"
+                type="number"
+                domain={[1, maxClinicianDay]}
+                allowDecimals={false}
+                label={{
+                  value: 'Live session #',
+                  position: 'insideBottom',
+                  dy: 10,
+                }}
+              />
+
+              <YAxis
+                domain={[0, 9]}
+                ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                label={{
+                  value: 'Stuttering Severity (0–9)',
+                  angle: -90,
+                  position: 'insideLeft',
+                  dx: -5,
+                }}
+              />
+
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload.length) return null
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-white border rounded-lg shadow px-3 py-2 text-sm">
+                      <div className="font-semibold">
+                        Session {data.day}: {data.dayValue}
+                      </div>
+                      <div className="text-emerald-700 font-medium">
+                        Severity: {data.severity}/9
+                      </div>
+                    </div>
+                  )
+                }}
+              />
+
+              <Area
+                type="monotone"
+                dataKey="severity"
+                stroke="#10b981"
+                strokeWidth={3}
+                fill="url(#clinicianSeverityLine)"
+                dot={{ r: 5, strokeWidth: 2, fill: '#10b981' }}
+                animationDuration={1200}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </Card>
 
       {/* 📊 Strategy usage */}
@@ -774,6 +887,13 @@ export function ClinicianChildPage() {
             </Button>
 
             <Button
+              variant={tab === 'rate' ? 'primary' : 'secondary'}
+              onClick={() => setTab('rate')}
+            >
+              Rate Stuttering Severity
+            </Button>
+
+            <Button
               variant={tab === 'messages' ? 'primary' : 'secondary'}
               onClick={() => setTab('messages')}
             >
@@ -895,7 +1015,18 @@ export function ClinicianChildPage() {
               </div>
             </Card>
           ) : tab === 'dashboard' ? (
-            <TherapyDashboard submissions={submissions} assigned={assigned} />
+            <TherapyDashboard
+              submissions={submissions}
+              assigned={assigned}
+              sessionRatings={sessionRatings}
+              clinicianRatings={clinicianRatings}
+            />
+          ) : tab === 'rate' ? (
+            <ClinicianRatingPanel
+              childId={childId}
+              ratings={clinicianRatings}
+              onUpdated={loadAll}
+            />
           ) : (
             <MessagesPanel childId={childId} />
           )}
@@ -936,6 +1067,201 @@ function DateWiseBars({ submissions }) {
       ))}
       <div className="text-[11px] text-slate-500">Showing last 10 days with submissions.</div>
     </div>
+  )
+}
+
+const WEEKDAY_OPTIONS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]
+
+function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
+  const [dayValue, setDayValue] = useState('')
+  const [rating, setRating] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [msg, setMsg] = useState(null)
+
+  const sortedRatings = [...ratings].sort((a, b) => a.day - b.day)
+  const nextDay = sortedRatings.length
+    ? Math.max(...sortedRatings.map((r) => r.day)) + 1
+    : 1
+
+  async function submitRating() {
+    const trimmed = dayValue.trim()
+    if (!trimmed) {
+      setError('Enter when the live session occurred (e.g. Tuesday).')
+      return
+    }
+    if (rating === null) {
+      setError('Select a severity rating from 0 to 9.')
+      return
+    }
+
+    setBusy(true)
+    setError(null)
+    setMsg(null)
+    try {
+      await api.post(`/api/clinicians/children/${childId}/clinician-ratings`, {
+        dayValue: trimmed,
+        rating,
+      })
+      setMsg(`Rating saved as live session ${nextDay}.`)
+      setDayValue('')
+      setRating(null)
+      await onUpdated()
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to save rating')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function removeRating(ratingId) {
+    if (!window.confirm('Remove this rating?')) return
+    setBusy(true)
+    setError(null)
+    try {
+      await api.delete(
+        `/api/clinicians/children/${childId}/clinician-ratings/${ratingId}`
+      )
+      await onUpdated()
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to delete rating')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="mt-4">
+      <div className="text-sm font-semibold text-slate-900">
+        Rate stuttering severity (live sessions)
+      </div>
+      <p className="mt-1 text-xs text-slate-600">
+        After each live session with the child, record when it happened and a severity
+        score (0–9). Sessions are numbered automatically (1, 2, 3…) and are separate
+        from parent daily practice ratings.
+      </p>
+
+      {error ? (
+        <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {msg ? (
+        <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+          {msg}
+        </div>
+      ) : null}
+
+      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Next live session: Day {nextDay}
+        </div>
+
+        <div className="mt-4">
+          <label className="text-sm font-semibold text-slate-900">
+            Session day / date label
+          </label>
+          <p className="mt-1 text-xs text-slate-500">
+            e.g. Tuesday, Thursday, or 4 June 2026
+          </p>
+          <input
+            type="text"
+            value={dayValue}
+            onChange={(e) => setDayValue(e.target.value)}
+            placeholder="Tuesday"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+            maxLength={100}
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {WEEKDAY_OPTIONS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDayValue(d)}
+                className={`rounded-lg border px-2 py-1 text-xs font-medium transition ${
+                  dayValue === d
+                    ? 'border-emerald-600 bg-emerald-600 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="text-sm font-semibold text-slate-900">
+            Stuttering severity (0–9)
+          </div>
+          <div className="mt-1 text-xs text-slate-500">
+            0 = no stuttering · 9 = extremely severe
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[...Array(10)].map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setRating(i)}
+                className={`h-10 w-10 rounded-xl border text-sm font-semibold transition ${
+                  rating === i
+                    ? 'border-emerald-600 bg-emerald-600 text-white'
+                    : 'border-slate-200 bg-white text-slate-800'
+                }`}
+              >
+                {i}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <Button disabled={busy} onClick={submitRating}>
+            {busy ? 'Saving…' : `Save as session ${nextDay}`}
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <div className="text-sm font-semibold text-slate-900">Recorded ratings</div>
+        {sortedRatings.length === 0 ? (
+          <div className="mt-3 text-sm text-slate-600">No ratings yet.</div>
+        ) : (
+          <div className="mt-3 grid gap-2">
+            {sortedRatings.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    Session {r.day}: {r.dayValue}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-600">
+                    Severity {r.rating}/9 · {formatDate(r.ratedAt)}
+                  </div>
+                </div>
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => removeRating(r.id)}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }
 

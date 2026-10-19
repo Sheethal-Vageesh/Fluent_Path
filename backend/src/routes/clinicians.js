@@ -15,6 +15,7 @@ const { sendChildIdSms } = require('../utils/sms');
 const { createUploader, persistUploadedFile } = require('../utils/upload');
 const { signMediaUrl } = require('../utils/mediaAccess');
 const { SessionSubmission } = require('../models/SessionSubmission')
+const { ClinicianRating } = require('../models/ClinicianRating')
 
 
 const clinicianRouter = express.Router();
@@ -320,6 +321,9 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
     const sessionRatings = await SessionSubmission.find({ clinicianId, parentId: child._id })
       .sort({ sessionNumber: 1 });
 
+    const clinicianRatings = await ClinicianRating.find({ clinicianId, parentId: child._id })
+      .sort({ day: 1 });
+
     res.json({
       submissions: await Promise.all(
         submissions.map(async (s) => ({
@@ -341,11 +345,144 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
         submittedAt: s.submittedAt,
         autoSubmitted: s.autoSubmitted || false,
       })),
+      clinicianRatings: clinicianRatings.map((r) => ({
+        id: r._id,
+        day: r.day,
+        dayValue: r.dayValue,
+        rating: r.rating,
+        ratedAt: r.ratedAt,
+      })),
     });
   } catch (e) {
     next(e);
   }
 });
+
+const clinicianRatingBodySchema = z.object({
+  dayValue: z.string().trim().min(1, 'Session day label is required').max(100),
+  rating: z.coerce.number().int().min(0).max(9),
+});
+
+clinicianRouter.get(
+  '/children/:childId/clinician-ratings',
+  requireAuth,
+  requireRole('clinician'),
+  async (req, res, next) => {
+    try {
+      const clinicianId = req.user.clinicianId;
+      const { childId } = validate(childIdParamSchema, req.params);
+      const child = await Parent.findOne({ _id: childId, clinicianId, status: 'active' });
+      if (!child) {
+        const err = new Error('Child not found');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const ratings = await ClinicianRating.find({ clinicianId, parentId: child._id }).sort({
+        day: 1,
+      });
+
+      res.json({
+        ratings: ratings.map((r) => ({
+          id: r._id,
+          day: r.day,
+          dayValue: r.dayValue,
+          rating: r.rating,
+          ratedAt: r.ratedAt,
+        })),
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+clinicianRouter.post(
+  '/children/:childId/clinician-ratings',
+  requireAuth,
+  requireRole('clinician'),
+  async (req, res, next) => {
+    try {
+      const clinicianId = req.user.clinicianId;
+      const { childId } = validate(childIdParamSchema, req.params);
+      const data = validate(clinicianRatingBodySchema, req.body);
+
+      const child = await Parent.findOne({ _id: childId, clinicianId, status: 'active' });
+      if (!child) {
+        const err = new Error('Child not found');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const last = await ClinicianRating.findOne({ clinicianId, parentId: child._id })
+        .sort({ day: -1 })
+        .select('day');
+      const day = (last?.day || 0) + 1;
+
+      const rating = await ClinicianRating.create({
+        clinicianId,
+        parentId: child._id,
+        day,
+        dayValue: data.dayValue,
+        rating: data.rating,
+        ratedAt: new Date(),
+      });
+
+      res.status(201).json({
+        rating: {
+          id: rating._id,
+          day: rating.day,
+          dayValue: rating.dayValue,
+          rating: rating.rating,
+          ratedAt: rating.ratedAt,
+        },
+      });
+    } catch (e) {
+      if (e && e.code === 11000) {
+        const err = new Error('Rating for this day already exists');
+        err.statusCode = 409;
+        return next(err);
+      }
+      next(e);
+    }
+  }
+);
+
+clinicianRouter.delete(
+  '/children/:childId/clinician-ratings/:ratingId',
+  requireAuth,
+  requireRole('clinician'),
+  async (req, res, next) => {
+    try {
+      const clinicianId = req.user.clinicianId;
+      const { childId } = validate(childIdParamSchema, req.params);
+      const ratingId = req.params.ratingId;
+
+      const child = await Parent.findOne({ _id: childId, clinicianId, status: 'active' });
+      if (!child) {
+        const err = new Error('Child not found');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const deleted = await ClinicianRating.findOneAndDelete({
+        _id: ratingId,
+        clinicianId,
+        parentId: child._id,
+      });
+
+      if (!deleted) {
+        const err = new Error('Rating not found');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      res.json({ ok: true });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 clinicianRouter.delete('/children/:childId', requireAuth, requireRole('clinician'), async (req, res, next) => {
   try {
@@ -360,6 +497,7 @@ clinicianRouter.delete('/children/:childId', requireAuth, requireRole('clinician
 
     await StrategyAssignment.deleteMany({ clinicianId, parentId: child._id });
     await PracticeSubmission.deleteMany({ clinicianId, parentId: child._id });
+    await ClinicianRating.deleteMany({ clinicianId, parentId: child._id });
     await Message.deleteMany({ clinicianId, parentId: child._id });
     await ParentRequest.deleteOne({ _id: child.requestId, clinicianId });
     await Parent.deleteOne({ _id: child._id, clinicianId });
