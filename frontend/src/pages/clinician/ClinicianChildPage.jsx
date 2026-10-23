@@ -32,6 +32,7 @@ export function ClinicianChildPage() {
   const [checked, setChecked] = useState({})
   const [submissions, setSubmissions] = useState([])
   const [sessionRatings, setSessionRatings] = useState([])
+  const [assignmentHistory, setAssignmentHistory] = useState([])
   const [clinicianRatings, setClinicianRatings] = useState([])
   const [selectedSession, setSelectedSession] = useState(null)
 
@@ -48,18 +49,20 @@ export function ClinicianChildPage() {
     setMsg(null)
     setLoading(true)
     try {
-      const [c, s, a, p] = await Promise.all([
+      const [c, s, a, p, cr] = await Promise.all([
         api.get(`/api/clinicians/children/${childId}`),
         api.get('/api/clinicians/strategies'),
         api.get(`/api/clinicians/children/${childId}/assignments`),
         api.get(`/api/clinicians/children/${childId}/progress`),
+        api.get(`/api/clinicians/children/${childId}/clinician-ratings`),
       ])
       setChild(c.data.child)
       setStrategies(s.data.strategies || [])
       setAssigned(a.data.assignments || [])
       setSubmissions(p.data.submissions || [])
       setSessionRatings(p.data.sessionRatings || [])
-      setClinicianRatings(p.data.clinicianRatings || [])
+      setAssignmentHistory(p.data.assignmentHistory || [])
+      setClinicianRatings(cr.data.ratings || [])
 
       const initial = {}
       ;(a.data.assignments || []).forEach((x) => {
@@ -108,17 +111,39 @@ export function ClinicianChildPage() {
   const filteredSubmissions = selectedSession
     ? submissions.filter((s) => s.sessionNumber === selectedSession)
     : []
+  const selectedSessionRating = sessionRatings.find(
+    (rating) => rating.sessionNumber === selectedSession
+  )
 
   
 
 
 
  function TherapyDashboard({
+  child,
   submissions = [],
   assigned = [],
   sessionRatings = [],
   clinicianRatings = [],
 }) {
+  function printReport() {
+    const previousTitle = document.title
+    const reportName = [child?.childName, child?.childId]
+      .filter(Boolean)
+      .join(' - ')
+    document.title = reportName
+      ? `${reportName} Progress Report`
+      : 'Child Progress Report'
+
+    const restoreTitle = () => {
+      document.title = previousTitle
+      window.removeEventListener('afterprint', restoreTitle)
+    }
+
+    window.addEventListener('afterprint', restoreTitle)
+    window.print()
+  }
+
   const hasSubmissions = Array.isArray(submissions) && submissions.length > 0
   const hasClinicianRatings =
     Array.isArray(clinicianRatings) && clinicianRatings.length > 0
@@ -148,22 +173,46 @@ export function ClinicianChildPage() {
     .map(Number)
     .sort((a, b) => a - b)
 
+  const sessionRatingMap = new Map(sessionRatings.map((s) => [s.sessionNumber, s]))
+
   // 📊 1. Strategies per session (BAR)
-    const strategiesPerSession = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
-      const sessionNum = i + 1
-      const completed = sessionMap[sessionNum]?.length || 0
-      const total = assigned.length || 0
+  const strategiesPerSession = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
+    const sessionNum = i + 1
+    const sessionRating = sessionRatingMap.get(sessionNum)
+    const sessionDate = new Date(
+      sessionRating?.startedAt || sessionRating?.submittedAt || 0
+    )
+    const hasSessionDate = !Number.isNaN(sessionDate.getTime()) && sessionDate.getTime() > 0
+    const daySubmissions = sessionMap[sessionNum] || []
+    const completed = daySubmissions.length
+    const manualSessionComplete = Boolean(
+      sessionRating?.submittedAt && !sessionRating.autoSubmitted
+    )
+    const historicalAssignmentCount = hasSessionDate
+      ? assignmentHistory.filter((assignment) => {
+          const assignedAt = new Date(assignment.assignedAt)
+          const updatedAt = new Date(assignment.updatedAt)
+          const wasAssigned = !Number.isNaN(assignedAt.getTime()) && assignedAt <= sessionDate
+          const wasStillActive = assignment.active || (
+            !Number.isNaN(updatedAt.getTime()) && sessionDate < updatedAt
+          )
+          return wasAssigned && wasStillActive
+        }).length
+      : 0
+    const expectedAssignments = manualSessionComplete
+      ? completed
+      : historicalAssignmentCount || assigned.length
 
-      return {
-        session: sessionNum,
-        percent: total ? Math.round((completed / total) * 100) : 0,
-        completed,   // ✅ needed for tooltip
-        total,       // ✅ needed for tooltip
-      }
-    })
+    return {
+      session: sessionNum,
+      percent: expectedAssignments
+        ? Math.min(100, Math.round((completed / expectedAssignments) * 100))
+        : 0,
+      completed,
+      total: expectedAssignments,
+    }
+  })
   // 📉 2. Severity (LINE)
-    const sessionRatingMap = new Map(sessionRatings.map((s) => [s.sessionNumber, s]))
-
     const severityData = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
       const session = i + 1
       const rating = sessionRatingMap.get(session)
@@ -173,6 +222,19 @@ export function ClinicianChildPage() {
         severity:
           rating && Number.isFinite(rating.stuttering)
             ? Number(rating.stuttering)
+            : null,
+      }
+    })
+
+    const naturalnessData = Array.from({ length: TOTAL_SESSIONS }, (_, i) => {
+      const session = i + 1
+      const rating = sessionRatingMap.get(session)
+
+      return {
+        session,
+        naturalness:
+          rating && Number.isFinite(rating.naturalness)
+            ? Number(rating.naturalness)
             : null,
       }
     })
@@ -232,20 +294,39 @@ export function ClinicianChildPage() {
     // incomplete strategies continuously?
     let consistencyRisk = false
 
-    const incompleteSessionNumbers = strategiesPerSession
-      .filter((x) => x.percent < 100)
-      .map((x) => x.session)
+    const finalizedSessions = sessionRatings
+      .filter((rating) => rating.submittedAt)
+      .map((rating) => rating.sessionNumber)
+      .sort((a, b) => a - b)
+    const incompleteSessionNumbers = new Set(
+      strategiesPerSession
+        .filter((session) => {
+          const rating = sessionRatingMap.get(session.session)
+          return (
+            rating?.autoSubmitted &&
+            finalizedSessions.includes(session.session) &&
+            session.total > 0 &&
+            session.percent < 100
+          )
+        })
+        .map((session) => session.session)
+    )
 
     let longestRun = 0
     let currentRun = 0
+    let previousSession = null
 
-    for (const session of sessions) {
-      if (incompleteSessionNumbers.includes(session)) {
+    for (const session of finalizedSessions) {
+      if (previousSession !== null && session !== previousSession + 1) {
+        currentRun = 0
+      }
+      if (incompleteSessionNumbers.has(session)) {
         currentRun += 1
         longestRun = Math.max(longestRun, currentRun)
       } else {
         currentRun = 0
       }
+      previousSession = session
     }
 
     if (longestRun >= 2) {
@@ -253,7 +334,26 @@ export function ClinicianChildPage() {
     }
 
   return (
-    <div className="mt-4 space-y-5">
+    <div id="printable-progress-report" className="mt-4 space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">
+            {child?.childName || 'Child'}
+            {child?.childId ? ` (${child.childId})` : ''} Progress Report
+          </h2>
+          <div className="mt-2 grid gap-x-6 gap-y-1 text-sm text-slate-600 sm:grid-cols-2">
+            <div>Child: <span className="font-semibold text-slate-900">{child?.childName || '—'}</span></div>
+            <div>Age: <span className="font-semibold text-slate-900">{child?.childAge ?? '—'}</span></div>
+            <div>Child ID: <span className="font-semibold text-slate-900">{child?.childId || '—'}</span></div>
+            <div>Baseline severity: <span className="font-semibold text-slate-900">{child?.baselineSeverity || '—'}</span></div>
+            <div>Report generated: <span className="font-semibold text-slate-900">{new Date().toLocaleDateString()}</span></div>
+          </div>
+        </div>
+        <Button className="no-print" onClick={printReport}>
+          Download / Print PDF
+        </Button>
+      </div>
+
       {/* 🚨 Risk Alerts */}
       <div className="grid gap-4 md:grid-cols-2">
 
@@ -540,6 +640,84 @@ export function ClinicianChildPage() {
 
         </div> */}
 
+      </Card>
+
+      {/* 📈 Parent-reported speech naturalness */}
+      <Card>
+        <div className="font-semibold mb-2">
+          Parent-Reported Speech Naturalness
+        </div>
+
+        {!naturalnessData.some((d) => d.naturalness != null) ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            No parent speech naturalness ratings yet.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%" minHeight={360}>
+            <AreaChart
+              data={naturalnessData.filter((d) => d.naturalness != null)}
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            >
+              <defs>
+                <linearGradient id="naturalnessLine" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+
+              <XAxis
+                dataKey="session"
+                type="number"
+                domain={[1, TOTAL_SESSIONS]}
+                tickCount={Math.min(TOTAL_SESSIONS, 10)}
+                label={{
+                  value: 'Practice days',
+                  position: 'insideBottom',
+                  dy: 10,
+                }}
+              />
+
+              <YAxis
+                domain={[1, 9]}
+                ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                tickMargin={10}
+                label={{
+                  value: 'Speech Naturalness Rating',
+                  angle: -90,
+                  position: 'insideLeft',
+                  dx: -5,
+                  style: { textAnchor: 'middle' },
+                }}
+              />
+
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload.length) return null
+
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-white border rounded-lg shadow px-3 py-2 text-sm">
+                      <div className="font-semibold">Day: {data.session}</div>
+                      <div>Naturalness: {data.naturalness}/9</div>
+                    </div>
+                  )
+                }}
+              />
+
+              <Area
+                type="monotone"
+                dataKey="naturalness"
+                stroke="#10b981"
+                strokeWidth={3}
+                fill="url(#naturalnessLine)"
+                dot={{ r: 5, strokeWidth: 2, fill: '#10b981' }}
+                animationDuration={1200}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </Card>
 
       {/* 📉 Clinician live-session severity */}
@@ -975,47 +1153,75 @@ export function ClinicianChildPage() {
               <div className="mt-4">
                 {!selectedSession ? (
                   <div className="text-sm text-slate-600">Select a Day to view progress.</div>
-                ) : filteredSubmissions.length === 0 ? (
-                  <div className="text-sm text-slate-600">No submissions for this Day.</div>
                 ) : (
                   <div className="grid gap-3">
-                    {filteredSubmissions.map((s) => (
-                      <div key={s.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {s.strategy?.title || 'Strategy'}
-                        </div>
-
-                        <div className="mt-1 text-xs text-slate-600">
-                          Submitted: {formatDate(s.submittedAt)}
-                        </div>
-
-                        <div className="mt-3 grid gap-2 text-sm text-slate-800 sm:grid-cols-2">
-                          <div>
-                            Stuttering: <span className="font-semibold">{s.stuttering}/9</span>
+                    <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+                      <div className="text-sm font-semibold text-slate-900">
+                        Day {selectedSession} ratings
+                      </div>
+                      {selectedSessionRating ? (
+                        <>
+                          <div className="mt-1 text-xs text-slate-600">
+                            Submitted: {formatDate(selectedSessionRating.submittedAt)}
                           </div>
-                          <div>
-                            Naturalness: <span className="font-semibold">{s.naturalness}/9</span>
+                          <div className="mt-3 grid gap-2 text-sm text-slate-800 sm:grid-cols-2">
+                            <div>
+                              Stuttering severity:{' '}
+                              <span className="font-semibold">
+                                {selectedSessionRating.stuttering ?? 'Not recorded'}
+                                {selectedSessionRating.stuttering != null ? '/9' : ''}
+                              </span>
+                            </div>
+                            <div>
+                              Speech naturalness:{' '}
+                              <span className="font-semibold">
+                                {selectedSessionRating.naturalness ?? 'Not recorded'}
+                                {selectedSessionRating.naturalness != null ? '/9' : ''}
+                              </span>
+                            </div>
                           </div>
-                          <div>
+                        </>
+                      ) : (
+                        <div className="mt-1 text-sm text-slate-600">
+                          No day ratings submitted.
+                        </div>
+                      )}
+                    </div>
+
+                    {filteredSubmissions.length === 0 ? (
+                      <div className="text-sm text-slate-600">No strategy submissions for this Day.</div>
+                    ) : (
+                      filteredSubmissions.map((s) => (
+                        <div key={s.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-sm font-semibold text-slate-900">
+                            {s.strategy?.title || 'Strategy'}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-600">
+                            Submitted: {formatDate(s.submittedAt)}
+                          </div>
+
+                          <div className="mt-3 text-sm text-slate-800">
                             Duration: <span className="font-semibold">{secondsToHms(s.durationSeconds)}</span>
                           </div>
-                        </div>
 
-                        {s.practiceVideoUrl ? (
-                          <div className="mt-3">
-                            <video className="mt-2 w-full max-w-xl rounded-xl border border-slate-200 bg-black" controls>
-                              <source src={resolveMediaUrlLocal(s.practiceVideoUrl)} />
-                            </video>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
+                          {s.practiceVideoUrl ? (
+                            <div className="mt-3">
+                              <video className="mt-2 w-full max-w-xl rounded-xl border border-slate-200 bg-black" controls>
+                                <source src={resolveMediaUrlLocal(s.practiceVideoUrl)} />
+                              </video>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
             </Card>
           ) : tab === 'dashboard' ? (
             <TherapyDashboard
+              child={child}
               submissions={submissions}
               assigned={assigned}
               sessionRatings={sessionRatings}
@@ -1025,7 +1231,21 @@ export function ClinicianChildPage() {
             <ClinicianRatingPanel
               childId={childId}
               ratings={clinicianRatings}
-              onUpdated={loadAll}
+              onUpdated={(change) => {
+                if (change?.type === 'replace' && Array.isArray(change.ratings)) {
+                  setClinicianRatings(change.ratings)
+                } else if (change?.type === 'add' && change.rating) {
+                  setClinicianRatings((current) =>
+                    current.some((rating) => rating.id === change.rating.id)
+                      ? current
+                      : [...current, change.rating]
+                  )
+                } else if (change?.type === 'delete') {
+                  setClinicianRatings((current) =>
+                    current.filter((rating) => rating.id !== change.ratingId)
+                  )
+                }
+              }}
             />
           ) : (
             <MessagesPanel childId={childId} />
@@ -1092,6 +1312,29 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
     ? Math.max(...sortedRatings.map((r) => r.day)) + 1
     : 1
 
+  async function refreshRatings(showError = true) {
+    if (showError) setError(null)
+    try {
+      const { data } = await api.get(
+        `/api/clinicians/children/${childId}/clinician-ratings`
+      )
+      if (!Array.isArray(data?.ratings)) {
+        throw new Error('Ratings endpoint returned an invalid response')
+      }
+      onUpdated?.({ type: 'replace', ratings: data.ratings })
+      return data.ratings
+    } catch (err) {
+      if (showError) {
+        setError(
+          err?.response?.data?.error ||
+            err?.message ||
+            'Failed to reload recorded ratings'
+        )
+      }
+      return null
+    }
+  }
+
   async function submitRating() {
     const trimmed = dayValue.trim()
     if (!trimmed) {
@@ -1107,16 +1350,44 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
     setError(null)
     setMsg(null)
     try {
-      await api.post(`/api/clinicians/children/${childId}/clinician-ratings`, {
-        dayValue: trimmed,
-        rating,
-      })
-      setMsg(`Rating saved as live session ${nextDay}.`)
+      const { data } = await api.post(
+        `/api/clinicians/children/${childId}/clinician-ratings`,
+        {
+          dayValue: trimmed,
+          rating,
+        }
+      )
+      if (typeof data === 'string') {
+        throw new Error(
+          'The configured backend does not have the clinician ratings API. Start the local backend or deploy the latest backend version.'
+        )
+      }
+      let savedRating = data?.rating
+      if (savedRating) {
+        onUpdated?.({ type: 'add', rating: savedRating })
+      } else {
+        const refreshedRatings = await refreshRatings(false)
+        savedRating = refreshedRatings
+          ?.filter(
+            (item) => item.dayValue === trimmed && item.rating === rating
+          )
+          .sort((left, right) => right.day - left.day)[0]
+      }
+
+      setMsg(
+        savedRating
+          ? `Rating saved as live session ${savedRating.day}.`
+          : 'The server accepted the rating, but it could not be confirmed in the recorded ratings list. Refresh the list or check the backend deployment.'
+      )
       setDayValue('')
       setRating(null)
-      await onUpdated()
     } catch (err) {
-      setError(err?.response?.data?.error || 'Failed to save rating')
+      setError(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to save rating'
+      )
     } finally {
       setBusy(false)
     }
@@ -1130,7 +1401,7 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
       await api.delete(
         `/api/clinicians/children/${childId}/clinician-ratings/${ratingId}`
       )
-      await onUpdated()
+      onUpdated?.({ type: 'delete', ratingId })
     } catch (err) {
       setError(err?.response?.data?.error || 'Failed to delete rating')
     } finally {
@@ -1155,7 +1426,13 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
         </div>
       ) : null}
       {msg ? (
-        <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+        <div
+          className={`mt-3 rounded-xl p-3 text-sm font-medium ${
+            msg.startsWith('The server accepted')
+              ? 'bg-amber-50 text-amber-800'
+              : 'bg-emerald-50 text-emerald-700'
+          }`}
+        >
           {msg}
         </div>
       ) : null}
@@ -1231,7 +1508,12 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
       </div>
 
       <div className="mt-6 border-t border-slate-200 pt-4">
-        <div className="text-sm font-semibold text-slate-900">Recorded ratings</div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-slate-900">Recorded ratings</div>
+          <Button variant="secondary" disabled={busy} onClick={refreshRatings}>
+            Refresh ratings
+          </Button>
+        </div>
         {sortedRatings.length === 0 ? (
           <div className="mt-3 text-sm text-slate-600">No ratings yet.</div>
         ) : (
@@ -1249,13 +1531,13 @@ function ClinicianRatingPanel({ childId, ratings = [], onUpdated }) {
                     Severity {r.rating}/9 · {formatDate(r.ratedAt)}
                   </div>
                 </div>
-                <Button
+                {/* <Button
                   variant="secondary"
                   disabled={busy}
                   onClick={() => removeRating(r.id)}
                 >
                   Remove
-                </Button>
+                </Button> */}
               </div>
             ))}
           </div>
@@ -1362,4 +1644,3 @@ function MessagesPanel({ childId }) {
     </Card>
   )
 }
-

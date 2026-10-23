@@ -85,16 +85,16 @@ function createApp() {
   app.use('/api/clinicians', clinicianRouter);
   app.use('/api/parents', parentRouter);
 
+  app.use('/api', notFoundHandler);
+
   // Serve index.html for all other routes (for React Router)
   app.use((req, res) => {
-  res.sendFile(path.join(process.cwd(), "public", "index.html"));
+    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
   });
 
-  app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;
 }
 
 module.exports = { createApp };
-

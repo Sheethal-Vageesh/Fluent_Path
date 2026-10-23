@@ -115,6 +115,7 @@ clinicianRouter.get('/children/:childId', requireAuth, requireRole('clinician'),
         childName: child.childName,
         childAge: child.childAge,
         parentName: child.parentName,
+        baselineSeverity: child.baselineSeverity,
         email: child.email,
         phone: child.phone,
         createdAt: child.createdAt,
@@ -321,6 +322,11 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
     const sessionRatings = await SessionSubmission.find({ clinicianId, parentId: child._id })
       .sort({ sessionNumber: 1 });
 
+    const assignmentHistory = await StrategyAssignment.find({
+      clinicianId,
+      parentId: child._id,
+    }).select('assignedAt active updatedAt');
+
     const clinicianRatings = await ClinicianRating.find({ clinicianId, parentId: child._id })
       .sort({ day: 1 });
 
@@ -328,6 +334,7 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
       submissions: await Promise.all(
         submissions.map(async (s) => ({
           id: s._id,
+          assignmentId: s.assignmentId,
           sessionNumber: s.sessionNumber,
           stuttering: s.StutteringSeverityRating,
           naturalness: s.SpeechNaturalnessRating,
@@ -340,10 +347,16 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
       sessionRatings: sessionRatings.map((s) => ({
         id: s._id,
         sessionNumber: s.sessionNumber,
+        startedAt: s.startedAt,
         stuttering: s.StutteringSeverityRating,
         naturalness: s.SpeechNaturalnessRating,
         submittedAt: s.submittedAt,
         autoSubmitted: s.autoSubmitted || false,
+      })),
+      assignmentHistory: assignmentHistory.map((assignment) => ({
+        assignedAt: assignment.assignedAt,
+        active: assignment.active,
+        updatedAt: assignment.updatedAt,
       })),
       clinicianRatings: clinicianRatings.map((r) => ({
         id: r._id,
@@ -783,4 +796,3 @@ clinicianRouter.post('/requests/accept', requireAuth, requireRole('clinician'), 
 });
 
 module.exports = { clinicianRouter };
-

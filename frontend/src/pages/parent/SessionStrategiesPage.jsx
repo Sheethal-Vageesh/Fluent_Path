@@ -24,6 +24,10 @@ export function SessionStrategiesPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
+  const allStrategiesSubmitted = assignments.every((assignment) =>
+    submittedIds.includes(assignment.id)
+  )
+
   useEffect(() => {
     async function load() {
       setLoading(true)
@@ -298,17 +302,27 @@ export function SessionStrategiesPage() {
             </div>
 
             <div className="text-base text-red-600">
-             Submit both ratings after completing all the strategies assigned for this day.
+             {!allStrategiesSubmitted
+               ? 'Submit every assigned strategy before submitting this day.'
+               : severityRating === null || naturalnessRating === null
+               ? 'Select both ratings before submitting this day.'
+               : 'All strategies and ratings are complete. You can submit this day.'}
               <br />
-            ಈ ದಿನಕ್ಕೆ ನಿಯೋಜಿಸಲಾದ ಎಲ್ಲಾ ತಂತ್ರಗಳ ಅಭ್ಯಾಸವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ ನಂತರ, ಎರಡೂ ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ಸಲ್ಲಿಸಿ.
+              {!allStrategiesSubmitted
+                ? 'ಈ ದಿನವನ್ನು ಸಲ್ಲಿಸುವ ಮೊದಲು ನಿಯೋಜಿಸಲಾದ ಪ್ರತಿಯೊಂದು ತಂತ್ರವನ್ನು ಸಲ್ಲಿಸಿ.'
+                : severityRating === null || naturalnessRating === null
+                ? 'ಈ ದಿನವನ್ನು ಸಲ್ಲಿಸುವ ಮೊದಲು ಎರಡೂ ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.'
+                : 'ಎಲ್ಲಾ ತಂತ್ರಗಳು ಮತ್ತು ಮೌಲ್ಯಮಾಪನಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ. ನೀವು ಈ ದಿನವನ್ನು ಸಲ್ಲಿಸಬಹುದು.'}
             </div>
 
             <div className="flex justify-end">
               <Button
                 disabled={
                   busy ||
+                  loading ||
                   sessionSubmitted ||
                   !sessionActive ||
+                  !allStrategiesSubmitted ||
                   severityRating === null ||
                   naturalnessRating === null
                 }
@@ -452,4 +466,3 @@ export function SessionStrategiesPage() {
 //     </div>
 //   )
 // }
-

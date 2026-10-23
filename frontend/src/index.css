@@ -24,3 +24,50 @@ body {
   }
 }
 
+@media print {
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #printable-progress-report,
+  #printable-progress-report * {
+    visibility: visible !important;
+  }
+
+  #printable-progress-report {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  #printable-progress-report .no-print {
+    display: none !important;
+  }
+
+  #printable-progress-report > * {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  #printable-progress-report .recharts-responsive-container {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

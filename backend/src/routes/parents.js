@@ -664,6 +664,39 @@ parentRouter.post(
       }
 
       const parent = await Parent.findById(parentId)
+      if (!parent) {
+        const err = new Error('Parent not found / ಪೋಷಕರ ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ')
+        err.statusCode = 404
+        throw err
+      }
+
+      const assignments = await StrategyAssignment.find({
+        parentId,
+        clinicianId: parent.clinicianId,
+        active: true,
+      }).select('_id')
+      const assignmentIds = assignments.map((assignment) => assignment._id)
+      const submissions = assignmentIds.length
+        ? await PracticeSubmission.find({
+            parentId,
+            sessionNumber,
+            assignmentId: { $in: assignmentIds },
+          }).select('assignmentId')
+        : []
+      const submittedAssignmentIds = new Set(
+        submissions.map((submission) => submission.assignmentId.toString())
+      )
+      const missingStrategies = assignmentIds.filter(
+        (assignmentId) => !submittedAssignmentIds.has(assignmentId.toString())
+      )
+
+      if (missingStrategies.length > 0) {
+        const err = new Error(
+          'Submit every assigned strategy before submitting this day / ಈ ದಿನವನ್ನು ಸಲ್ಲಿಸುವ ಮೊದಲು ನಿಯೋಜಿಸಲಾದ ಪ್ರತಿಯೊಂದು ತಂತ್ರವನ್ನು ಸಲ್ಲಿಸಿ'
+        )
+        err.statusCode = 400
+        throw err
+      }
 
       if (existing) {
         existing.StutteringSeverityRating = data.StutteringSeverityRating
@@ -734,4 +767,3 @@ parentRouter.post('/messages', requireAuth, requireRole('parent'), async (req, r
 
 
 module.exports = { parentRouter };
-
