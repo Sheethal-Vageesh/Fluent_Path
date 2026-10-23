@@ -340,6 +340,7 @@ clinicianRouter.get('/children/:childId/progress', requireAuth, requireRole('cli
           naturalness: s.SpeechNaturalnessRating,
           durationSeconds: s.durationSeconds,
           practiceVideoUrl: await signMediaUrl(s.practiceVideoUrl),
+          practiceMediaType: s.practiceMediaType || 'video',
           submittedAt: s.submittedAt,
           strategy: s.strategyId ? { id: s.strategyId._id, title: s.strategyId.title } : null,
         }))

@@ -28,7 +28,7 @@ export function ParentStrategyPage() {
 
   const durationSeconds = useMemo(() => toSeconds(dur), [dur])
 
-  const [practiceVideo, setPracticeVideo] = useState(null)
+  const [practiceFile, setPracticeFile] = useState(null)
   const [uploadError, setUploadError] = useState(null)
 
   const location = useLocation()
@@ -57,8 +57,8 @@ export function ParentStrategyPage() {
   }, [assignmentId])
 
   async function submit() {
-    if (practiceVideo && practiceVideo.size > MAX_UPLOAD_SIZE_BYTES) {
-      setUploadError('Video must be 50 MB or smaller. Choose a smaller file.')
+    if (practiceFile && practiceFile.size > MAX_UPLOAD_SIZE_BYTES) {
+      setUploadError('Audio or video files must be 50 MB or smaller. Choose a smaller file.')
       return
     }
 
@@ -73,8 +73,8 @@ export function ParentStrategyPage() {
       form.append('durationSeconds', String(durationSeconds))
       form.append('sessionNumber', String(sessionNumber))
 
-      if (practiceVideo) {
-        form.append('practiceVideo', practiceVideo)
+      if (practiceFile) {
+        form.append('practiceVideo', practiceFile)
       }
 
       await api.post(
@@ -91,7 +91,7 @@ export function ParentStrategyPage() {
         'Submitted successfully for this session / ಈ ಸೆಷನ್‌ಗೆ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ'
       )
 
-      setPracticeVideo(null)
+      setPracticeFile(null)
 
       setTimeout(() => {
         nav(`/parent/dashboard/session/${sessionNumber}`)
@@ -241,38 +241,38 @@ export function ParentStrategyPage() {
                     </div>
                   </div>
 
-                  {/* Video Upload */}
+                  {/* Audio or video upload */}
                   <label className="block">
                     <div className="mb-1 text-sm font-semibold text-slate-900">
-                      Practice Video (Optional)
+                      Practice Audio or Video (Optional)
                       <br />
-                      ಅಭ್ಯಾಸ ವೀಡಿಯೊ (ಐಚ್ಛಿಕ)
+                      ಅಭ್ಯಾಸದ ಆಡಿಯೋ ಅಥವಾ ವೀಡಿಯೊ (ಐಚ್ಛಿಕ)
                     </div>
 
                     <input
                       type="file"
-                      accept="video/*"
+                      accept="audio/*,video/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null
                         if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
-                          setPracticeVideo(null)
+                          setPracticeFile(null)
                           setUploadError(
-                            `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)} MB. The maximum is 50 MB. Choose a smaller video.`
+                            `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)} MB. The maximum is 50 MB. Choose a smaller file.`
                           )
                           e.target.value = ''
                           return
                         }
 
-                        setPracticeVideo(file)
+                        setPracticeFile(file)
                         setUploadError(null)
                       }}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
                     />
 
                     <div className="mt-1 text-xs text-slate-500">
-                      Optional video for clinician reference. Maximum file size: 50 MB.
+                      Optional audio or video for clinician reference. Maximum file size: 50 MB.
                       <br />
-                      ತಜ್ಞರ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ವೀಡಿಯೊ. ಗರಿಷ್ಠ ಫೈಲ್ ಗಾತ್ರ: 50 MB.
+                      ತಜ್ಞರ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ಆಡಿಯೋ ಅಥವಾ ವೀಡಿಯೊ. ಗರಿಷ್ಠ ಫೈಲ್ ಗಾತ್ರ: 50 MB.
                     </div>
                     {uploadError ? (
                       <div role="alert" className="mt-2 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">

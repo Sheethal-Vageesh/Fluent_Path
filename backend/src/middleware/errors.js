@@ -13,7 +13,7 @@ function mongooseErrorStatus(err) {
 function errorHandler(err, _req, res, _next) {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({
-      error: 'Video upload exceeds the 50 MB limit. Choose a smaller file.',
+      error: 'Audio or video upload exceeds the 50 MB limit. Choose a smaller file.',
     });
   }
 

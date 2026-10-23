@@ -17,6 +17,7 @@ const practiceSubmissionSchema = new mongoose.Schema(
     durationSeconds: { type: Number, required: true, min: 0, max: 24 * 60 * 60 },
 
     practiceVideoUrl: { type: String, trim: true, default: '' },
+    practiceMediaType: { type: String, enum: ['', 'audio', 'video'], default: '' },
     submittedAt: { type: Date, required: true, default: Date.now },
   },
   { timestamps: true }
@@ -31,4 +32,3 @@ practiceSubmissionSchema.index(
 const PracticeSubmission = mongoose.model('PracticeSubmission', practiceSubmissionSchema);
 
 module.exports = { PracticeSubmission };
-

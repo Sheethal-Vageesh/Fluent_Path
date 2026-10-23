@@ -1207,9 +1207,19 @@ export function ClinicianChildPage() {
 
                           {s.practiceVideoUrl ? (
                             <div className="mt-3">
-                              <video className="mt-2 w-full max-w-xl rounded-xl border border-slate-200 bg-black" controls>
-                                <source src={resolveMediaUrlLocal(s.practiceVideoUrl)} />
-                              </video>
+                              {s.practiceMediaType === 'audio' ? (
+                                <audio
+                                  className="mt-2 w-full max-w-xl"
+                                  controls
+                                  src={resolveMediaUrlLocal(s.practiceVideoUrl)}
+                                >
+                                  Your browser does not support audio playback.
+                                </audio>
+                              ) : (
+                                <video className="mt-2 w-full max-w-xl rounded-xl border border-slate-200 bg-black" controls>
+                                  <source src={resolveMediaUrlLocal(s.practiceVideoUrl)} />
+                                </video>
+                              )}
                             </div>
                           ) : null}
                         </div>

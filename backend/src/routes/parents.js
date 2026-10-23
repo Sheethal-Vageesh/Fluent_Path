@@ -312,6 +312,7 @@ parentRouter.post(
         durationSeconds: data.durationSeconds,
         sessionNumber: data.sessionNumber,
         practiceVideoUrl,
+        practiceMediaType: req.file?.mimetype?.startsWith('audio/') ? 'audio' : req.file ? 'video' : '',
         submittedAt: new Date(),
       };
 
