@@ -5,6 +5,8 @@ import { Button, Card, Container, Input } from '../../components/ui'
 import { api } from '../../lib/api'
 import { resolveMediaUrl } from '../../lib/media'
 
+const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024
+
 function toSeconds({ h, m, s }) {
   const hh = Math.max(0, Number(h) || 0)
   const mm = Math.max(0, Number(m) || 0)
@@ -27,6 +29,7 @@ export function ParentStrategyPage() {
   const durationSeconds = useMemo(() => toSeconds(dur), [dur])
 
   const [practiceVideo, setPracticeVideo] = useState(null)
+  const [uploadError, setUploadError] = useState(null)
 
   const location = useLocation()
   const sessionNumber = new URLSearchParams(location.search).get('session')
@@ -54,8 +57,14 @@ export function ParentStrategyPage() {
   }, [assignmentId])
 
   async function submit() {
+    if (practiceVideo && practiceVideo.size > MAX_UPLOAD_SIZE_BYTES) {
+      setUploadError('Video must be 50 MB or smaller. Choose a smaller file.')
+      return
+    }
+
     setBusy(true)
     setError(null)
+    setUploadError(null)
     setMsg(null)
 
     try {
@@ -243,17 +252,33 @@ export function ParentStrategyPage() {
                     <input
                       type="file"
                       accept="video/*"
-                      onChange={(e) =>
-                        setPracticeVideo(e.target.files?.[0] || null)
-                      }
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
+                          setPracticeVideo(null)
+                          setUploadError(
+                            `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)} MB. The maximum is 50 MB. Choose a smaller video.`
+                          )
+                          e.target.value = ''
+                          return
+                        }
+
+                        setPracticeVideo(file)
+                        setUploadError(null)
+                      }}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
                     />
 
                     <div className="mt-1 text-xs text-slate-500">
-                      Optional video for clinician reference.
+                      Optional video for clinician reference. Maximum file size: 50 MB.
                       <br />
-                      ತಜ್ಞರ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ವೀಡಿಯೊ.
+                      ತಜ್ಞರ ಪರಿಶೀಲನೆಗಾಗಿ ಐಚ್ಛಿಕ ವೀಡಿಯೊ. ಗರಿಷ್ಠ ಫೈಲ್ ಗಾತ್ರ: 50 MB.
                     </div>
+                    {uploadError ? (
+                      <div role="alert" className="mt-2 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">
+                        {uploadError}
+                      </div>
+                    ) : null}
                   </label>
 
                   {/* Buttons */}
@@ -266,7 +291,7 @@ export function ParentStrategyPage() {
                     </Button>
 
                     <Button
-                      disabled={busy}
+                      disabled={busy || Boolean(uploadError)}
                       onClick={submit}
                     >
                       {busy
@@ -530,4 +555,3 @@ export function ParentStrategyPage() {
 //     </AppShell>
 //   )
 // }
-

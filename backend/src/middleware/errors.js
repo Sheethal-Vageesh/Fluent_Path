@@ -11,6 +11,12 @@ function mongooseErrorStatus(err) {
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, _req, res, _next) {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({
+      error: 'Video upload exceeds the 50 MB limit. Choose a smaller file.',
+    });
+  }
+
   const mongoStatus = mongooseErrorStatus(err);
   const status = err.statusCode || mongoStatus || 500;
   const message =
@@ -31,4 +37,3 @@ function errorHandler(err, _req, res, _next) {
 }
 
 module.exports = { notFoundHandler, errorHandler };
-
